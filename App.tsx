@@ -2,12 +2,14 @@
 import React, { useState, useEffect } from 'react';
 import { LandingView } from './views/LandingView';
 import { PhotostripView } from './views/PhotostripView';
+import { CheckoutView } from './components/CheckoutView';
+import { AdminView } from './views/AdminView';
 import { CheckoutModal } from './components/CheckoutModal';
 import { Product, PhotostripTemplate } from './types';
 import { TEMPLATES, PHOTOSTRIP_SERIES, KEYCHAIN_PRODUCTS, STICKER_PRODUCTS } from './constants';
 
 const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'home' | 'builder' | 'cart' | 'series' | 'shop'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'builder' | 'cart' | 'series' | 'shop' | 'checkout' | 'admin'>('home');
   const [shopCategory, setShopCategory] = useState<'keychain' | 'sticker'>('keychain');
   const [cart, setCart] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -82,12 +84,11 @@ const App: React.FC = () => {
 
   const handleCheckoutFromBuilder = (templateName: string) => {
     setSelectedTemplateName(templateName);
-    setIsCheckoutOpen(true);
+    setCurrentView('checkout');
   };
 
-  const handleCheckoutFromCart = (product: Product) => {
-    setSelectedProduct(product);
-    setIsCheckoutOpen(true);
+  const handleCheckoutFromCart = () => {
+    setCurrentView('checkout');
   };
 
   const removeFromCart = (index: number) => {
@@ -258,7 +259,7 @@ const App: React.FC = () => {
                           INJECT_DATA
                         </button>
                       )}
-                      <button onClick={() => handleCheckoutFromCart(item)} className="btn-liquid" style={{ fontSize: '10px', padding: '0.6rem 1rem' }}>
+                      <button onClick={handleCheckoutFromCart} className="btn-liquid" style={{ fontSize: '10px', padding: '0.6rem 1rem' }}>
                         CHECKOUT
                       </button>
                       <button
@@ -296,6 +297,19 @@ const App: React.FC = () => {
         )}
 
         {currentView === 'builder' && <PhotostripView key={activeTemplate.id} initialTemplate={activeTemplate} onCheckout={handleCheckoutFromBuilder} />}
+
+        {currentView === 'checkout' && (
+          <CheckoutView
+            cart={cart}
+            totalPrice={calculateTotal()}
+            onSuccess={() => {
+              setCart([]);
+            }}
+            onBack={() => setCurrentView('cart')}
+          />
+        )}
+
+        {currentView === 'admin' && <AdminView />}
       </main>
 
       <nav className="mobile-nav">
@@ -319,7 +333,7 @@ const App: React.FC = () => {
           "Archiving moments, crafting artifacts—for those who feel the weight of digital nostalgia."
         </p>
         <div className="footer-meta">
-          <span>JKT / ID</span>
+          <span onClick={() => setCurrentView('admin')} style={{ cursor: 'default' }}>JKT / ID</span>
           <span>&copy; {new Date().getFullYear()} Visual Syndicate</span>
         </div>
       </footer>
