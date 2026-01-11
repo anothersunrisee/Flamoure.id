@@ -12,12 +12,13 @@ interface ImageConfig {
 
 interface PhotostripViewProps {
   initialTemplate?: PhotostripTemplate;
+  lockStyle?: boolean;
   onCheckout: (templateName: string, images: string[], files: File[]) => void;
 }
 
 type EditorTab = 'FRAMES' | 'ADJUST' | 'STYLE';
 
-export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate, onCheckout }) => {
+export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate, lockStyle, onCheckout }) => {
   const [images, setImages] = useState<string[]>([]);
   const [configs, setConfigs] = useState<ImageConfig[]>([
     { scale: 1, x: 0, y: 0, rotation: 0 },
@@ -372,15 +373,17 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
           {/* Right Side: Controls */}
           <div className="control-station">
             <div className="tab-nav">
-              {(['FRAMES', 'ADJUST', 'STYLE'] as EditorTab[]).map(tab => (
-                <button
-                  key={tab}
-                  className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
+              {(['FRAMES', 'ADJUST', 'STYLE'] as EditorTab[])
+                .filter(tab => !(lockStyle && tab === 'STYLE'))
+                .map(tab => (
+                  <button
+                    key={tab}
+                    className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
+                    onClick={() => setActiveTab(tab)}
+                  >
+                    {tab}
+                  </button>
+                ))}
             </div>
 
             <div style={{ minHeight: '400px' }}>
@@ -402,33 +405,57 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                     )}
                   </div>
 
-                  <div className="frames-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
-                    {[0, 1, 2, 3].map(i => (
+                  <div className="frames-grid" style={{
+                    display: 'flex',
+                    gap: '0.5rem',
+                    overflowX: 'auto',
+                    padding: '0.25rem',
+                    marginBottom: '1rem'
+                  }}>
+                    {[0, 1, 2].map(i => (
                       <div
                         key={i}
                         className={`thumb-box ${activeSlot === i ? 'selected' : ''}`}
                         onClick={() => handleSlotClick(i)}
-                        style={{ borderRadius: '1rem', aspectRatio: '1' }}
+                        style={{
+                          borderRadius: '0.75rem',
+                          width: '70px',
+                          height: '70px',
+                          flexShrink: 0,
+                          position: 'relative'
+                        }}
                       >
                         {images[i] ? (
-                          <img src={images[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          <img src={images[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '0.5rem' }} />
                         ) : (
-                          <span className="font-pixel" style={{ fontSize: '8px', opacity: 0.2 }}>0{i + 1}</span>
+                          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-secondary)', borderRadius: '0.5rem' }}>
+                            <span className="font-pixel" style={{ fontSize: '10px', opacity: 0.2 }}>0{i + 1}</span>
+                          </div>
                         )}
-                        <span className="font-pixel" style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '7px', opacity: 0.3 }}>0{i + 1}</span>
+                        <span className="font-pixel" style={{ position: 'absolute', top: '5px', left: '5px', fontSize: '8px', opacity: 0.5, fontWeight: 700 }}>0{i + 1}</span>
                       </div>
                     ))}
                   </div>
 
-                  <div style={{ marginTop: '0.5rem' }}>
+                  <div style={{ marginTop: '0.25rem' }}>
                     <input type="file" multiple accept="image/*" onChange={handleImageUpload} ref={fileInputRef} style={{ display: 'none' }} />
                     <button
                       onClick={() => fileInputRef.current?.click()}
                       className="preview-station"
-                      style={{ padding: '2rem', cursor: 'pointer', width: '100%', border: '1px dashed var(--border-color)', borderRadius: '1.5rem', background: 'var(--bg-secondary)', flexDirection: 'row', gap: '1rem' }}
+                      style={{
+                        padding: '1.25rem',
+                        cursor: 'pointer',
+                        width: '100%',
+                        border: '1px dashed var(--border-color)',
+                        borderRadius: '1rem',
+                        background: 'var(--bg-secondary)',
+                        flexDirection: 'row',
+                        gap: '0.75rem',
+                        justifyContent: 'center'
+                      }}
                     >
-                      <span style={{ fontSize: '1.25rem' }}>⧉</span>
-                      <span className="font-pixel" style={{ fontSize: '15px', opacity: 1, fontWeight: 700 }}>Inject_Fragment</span>
+                      <span style={{ fontSize: '1.1rem' }}>⧉</span>
+                      <span className="font-pixel" style={{ fontSize: '14px', opacity: 1, fontWeight: 700 }}>INJECT_ARTIFACT</span>
                     </button>
 
                     {images[activeSlot] && (

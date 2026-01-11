@@ -14,6 +14,7 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadProgress, setLoadProgress] = useState(0);
   const [isExiting, setIsExiting] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const [shopCategory, setShopCategory] = useState<'keychain' | 'sticker'>('keychain');
   const [cart, setCart] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -115,6 +116,17 @@ const App: React.FC = () => {
     const template = TEMPLATES.find(t => t.backgroundImage === series.image) || TEMPLATES[0];
     setActiveTemplate(template);
     setSelectedProduct(series);
+    setIsEditing(false);
+    setCurrentView('builder');
+  };
+
+  const handleEditPhotostrip = (item: Product) => {
+    const template = TEMPLATES.find(t => t.name === item.metadata?.templateName) ||
+      TEMPLATES.find(t => t.backgroundImage === item.image) ||
+      TEMPLATES[0];
+    setActiveTemplate(template);
+    setSelectedProduct(item);
+    setIsEditing(true);
     setCurrentView('builder');
   };
 
@@ -384,6 +396,25 @@ const App: React.FC = () => {
                       <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '9px', letterSpacing: '0.1em' }}>{item.type.toUpperCase()}</span>
                       <h4 className="font-primary" style={{ fontSize: '1.1rem', fontWeight: 800, margin: '2px 0' }}>{item.name}</h4>
                       <p className="font-pixel" style={{ opacity: 0.5, fontSize: '10px' }}>UNIT_PRICE: Rp {item.price.toLocaleString()}</p>
+
+                      {item.type === 'photostrip' && (
+                        <button
+                          onClick={() => handleEditPhotostrip(item)}
+                          className="font-pixel"
+                          style={{
+                            background: 'transparent',
+                            border: '1px solid var(--border-color)',
+                            color: 'var(--accent-blue)',
+                            fontSize: '8px',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            marginTop: '0.5rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          [ EDIT_ARTIFACT ]
+                        </button>
+                      )}
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -463,7 +494,7 @@ const App: React.FC = () => {
           </div>
         )}
 
-        {currentView === 'builder' && <PhotostripView key={activeTemplate.id} initialTemplate={activeTemplate} onCheckout={handleCheckoutFromBuilder} />}
+        {currentView === 'builder' && <PhotostripView key={activeTemplate.id} initialTemplate={activeTemplate} lockStyle={isEditing} onCheckout={handleCheckoutFromBuilder} />}
 
         {currentView === 'checkout' && (
           <CheckoutView
