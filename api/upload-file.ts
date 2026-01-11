@@ -1,5 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { drive } from './lib/drive';
+import { getDriveHandler } from './lib/drive';
 import { supabase } from './lib/supabase';
 import formidable from 'formidable';
 import fs from 'fs';
@@ -27,12 +27,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const order_id = fields.order_id?.[0];
         const folder_id = fields.folder_id?.[0];
-        const uploadFiles = files.files; // This could be an array if multiple files sent
+        const uploadFiles = files.files;
 
         if (!order_id || !folder_id || !uploadFiles) {
             return res.status(400).json({ error: 'Missing required data' });
         }
 
+        const drive = getDriveHandler();
         const fileList = Array.isArray(uploadFiles) ? uploadFiles : [uploadFiles];
         const results = [];
 
@@ -49,7 +50,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 fields: 'id',
             });
 
-            // Track asset in Supabase
             if (driveFile.data.id) {
                 await supabase.from('uploads').insert([
                     {

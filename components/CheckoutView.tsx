@@ -37,7 +37,11 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                     items: cart
                 })
             });
-            const data = await response.json();
+            const data = await response.json().catch(() => ({
+                success: false,
+                error: 'Response API bukan JSON. Ini biasanya karena Backend (Vercel Function) CRASH. Cek Vercel Dashboard > Logs.'
+            }));
+
             if (data.success) {
                 setOrderInfo({ id: data.order_id, code: data.order_code, folderId: data.drive_folder_id });
                 setCurrentStep('upload');
@@ -47,7 +51,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
             }
         } catch (err) {
             console.error('Fetch Error:', err);
-            alert('Connection Error: Pastikan Anda menjalankan server dengan "vercel dev" jika mengetes API secara lokal.');
+            alert('Connection Error: Gagal terhubung ke API. Pastikan Vercel sudah benar-benar selesai melakukan deployment.');
         } finally {
             setIsSubmitting(false);
         }

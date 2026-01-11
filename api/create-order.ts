@@ -1,7 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabase } from './lib/supabase';
-import { drive } from './lib/drive';
-import { v4 as uuidv4 } from 'uuid';
+import { getDriveHandler } from './lib/drive';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
@@ -20,7 +19,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const order_code = `FLAM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-        // 1. Create Folder in Google Drive
+        // 1. Initialize Drive safely
+        const drive = getDriveHandler();
+
+        // 2. Create Folder in Google Drive
         const folder = await drive.files.create({
             requestBody: {
                 name: order_code,
@@ -32,7 +34,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const drive_folder_id = folder.data.id;
 
-        // 2. Create Order in Supabase
+        // 3. Create Order in Supabase
         const { data: order, error: orderError } = await supabase
             .from('orders')
             .insert([
@@ -52,7 +54,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (orderError) throw orderError;
 
-        // 3. Create Order Items
+        // 4. Create Order Items
         const orderItems = items.map((item: any) => ({
             order_id: order.id,
             product_id: item.id || item.product_id,
@@ -75,16 +77,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
     } catch (error: any) {
         console.error('FULL_ERROR_LOG:', error);
-        let message = error.message;
 
-        // Help user identify the source
-        if (message.includes('JSON.parse')) message = 'GOOGLE_SERVICE_ACCOUNT di .env bukan JSON yang valid. Pastikan salin SELURUH isi file JSON.';
-        if (message.includes('parents')) message = 'GDRIVE_PARENT_FOLDER_ID tidak valid atau Service Account tidak punya akses ke folder tersebut.';
-        if (message.includes('orders')) message = 'Tabel "orders" tidak ditemukan di Supabase. Pastikan sudah menjalankan SQL Script di README.';
+        let message = error.message;
+        if (message.includes('DRIVE_CONFIG_ERROR')) {
+            message = 'Format GOOGLE_SERVICE_ACCOUNT di Vercel Dashboard salah (harus JSON valid).';
+        } else if (message.includes('parents')) {
+            message = 'GDRIVE_PARENT_FOLDER_ID salah atau folder tidak dishare ke email Service Account.';
+        } else if (message.includes('orders')) {
+            message = 'Tabel "orders" tidak ditemukan di Supabase. Cek tab SQL Editor.';
+        }
 
         return res.status(500).json({
             error: message,
-            step: 'Backend execution failed'
+            details: error.toString()
         });
     }
 }
