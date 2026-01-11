@@ -1,4 +1,5 @@
 
+// Build trigger: checkout flow refinement v1.0.1
 import React, { useState, useEffect } from 'react';
 import { LandingView } from './views/LandingView';
 import { PhotostripView } from './views/PhotostripView';
