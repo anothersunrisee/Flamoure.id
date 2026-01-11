@@ -441,21 +441,24 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                     <input type="file" multiple accept="image/*" onChange={handleImageUpload} ref={fileInputRef} style={{ display: 'none' }} />
                     <button
                       onClick={() => fileInputRef.current?.click()}
-                      className="preview-station"
+                      className="btn-liquid"
                       style={{
-                        padding: '1.25rem',
+                        padding: '1rem',
                         cursor: 'pointer',
                         width: '100%',
-                        border: '1px dashed var(--border-color)',
-                        borderRadius: '1rem',
-                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--accent-blue)',
+                        borderRadius: '0.75rem',
+                        background: 'rgba(0, 212, 255, 0.05)',
+                        display: 'flex',
                         flexDirection: 'row',
                         gap: '0.75rem',
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        color: 'var(--accent-blue)'
                       }}
                     >
                       <span style={{ fontSize: '1.1rem' }}>⧉</span>
-                      <span className="font-pixel" style={{ fontSize: '14px', opacity: 1, fontWeight: 700 }}>INJECT_ARTIFACT</span>
+                      <span className="font-pixel" style={{ fontSize: '14px', fontWeight: 700 }}>INJECT_ARTIFACT</span>
                     </button>
 
                     {images[activeSlot] && (

@@ -468,13 +468,13 @@ const App: React.FC = () => {
                       onClick={handleCheckoutFromCart}
                       className="btn-liquid"
                       style={{
-                        background: '#00d4ff',
-                        color: '#000',
-                        borderColor: '#00d4ff',
+                        background: 'var(--accent-blue)',
+                        color: '#fff',
+                        borderColor: 'var(--accent-blue)',
                         padding: '1.25rem 2.5rem',
                         fontSize: '12px',
                         fontWeight: 900,
-                        boxShadow: '0 10px 30px rgba(0, 212, 255, 0.3)',
+                        boxShadow: '0 10px 30px rgba(0, 212, 255, 0.2)',
                         whiteSpace: 'nowrap',
                         flexShrink: 0
                       }}

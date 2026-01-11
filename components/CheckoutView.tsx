@@ -22,6 +22,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [syncProgress, setSyncProgress] = useState(0);
     const [orderInfo, setOrderInfo] = useState<{ id: string, code: string } | null>(null);
+    const [finalPrice, setFinalPrice] = useState(totalPrice); // Lock the price for invoice
 
     const steps: Step[] = ['review', 'data', 'sync', 'success'];
 
@@ -45,19 +46,18 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
 
             if (!data.success) throw new Error(data.error || 'Failed to create order');
 
+            setFinalPrice(totalPrice); // Ensure we have the current total
             setOrderInfo({ id: data.order_id, code: data.order_code });
             setCurrentStep('sync');
 
-            // 2. Upload Files Automatically
+            // 2. Upload Files Automatically (Parallelized for Speed)
             const itemsWithFiles = cart.filter(item => item.metadata?.files && item.metadata.files.length > 0);
 
             if (itemsWithFiles.length > 0) {
                 let completed = 0;
-                for (let i = 0; i < itemsWithFiles.length; i++) {
-                    const item = itemsWithFiles[i];
+                const uploadPromises = itemsWithFiles.map(async (item, i) => {
                     const formData = new FormData();
                     formData.append('order_id', data.order_id);
-                    // Use item name and index as prefix
                     formData.append('prefix', `${i + 1}_${item.name}_`);
 
                     item.metadata!.files!.forEach(file => {
@@ -73,7 +73,9 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                         completed++;
                         setSyncProgress(Math.round((completed / itemsWithFiles.length) * 100));
                     }
-                }
+                });
+
+                await Promise.all(uploadPromises);
             }
 
             setCurrentStep('success');
@@ -146,11 +148,11 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                         <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
                             <div className="flex justify-between items-center">
                                 <span className="font-pixel" style={{ opacity: 0.6 }}>TOTAL_TO_PAY</span>
-                                <span className="font-primary" style={{ fontSize: '1.8rem', fontWeight: 900, color: '#00d4ff' }}>Rp {totalPrice.toLocaleString()}</span>
+                                <span className="font-primary" style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--accent-blue)' }}>Rp {totalPrice.toLocaleString()}</span>
                             </div>
                         </div>
 
-                        <button onClick={() => setCurrentStep('data')} className="btn-liquid" style={{ marginTop: '1rem' }}>
+                        <button onClick={() => setCurrentStep('data')} className="btn-liquid" style={{ marginTop: '1rem', background: 'var(--accent-blue)', color: '#fff', fontWeight: 800 }}>
                             CONFIRM_FRAGMENTS ➔
                         </button>
                     </div>
@@ -199,8 +201,8 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                             className="btn-liquid"
                             style={{
                                 marginTop: '1rem',
-                                background: '#00d4ff',
-                                color: '#000',
+                                background: 'var(--accent-blue)',
+                                color: '#fff',
                                 fontWeight: 900
                             }}
                         >
@@ -222,7 +224,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                 {currentStep === 'success' && (
                     <div className="flex flex-col gap-8 text-center">
                         <div style={{ display: 'flex', justifyContent: 'center' }}>
-                            <div className="success-badge" style={{ width: '80px', height: '80px', fontSize: '2rem' }}>✓</div>
+                            <div className="success-badge" style={{ width: '80px', height: '80px', fontSize: '2rem', background: 'var(--accent-blue)', color: '#fff' }}>✓</div>
                         </div>
 
                         <div>
@@ -232,60 +234,79 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                             </p>
                         </div>
 
-                        {/* Invoice Preview (Hidden but capturable) */}
+                        {/* Invoice Preview */}
                         <div style={{ position: 'absolute', left: '-9999px' }}>
                             <div id="invoice-capture" style={{
-                                width: '350px',
-                                padding: '30px',
-                                background: '#111',
+                                width: '380px',
+                                padding: '40px',
+                                background: '#0a0a0a',
                                 color: '#fff',
                                 fontFamily: 'var(--font-primary)',
-                                border: '1px solid #333'
+                                position: 'relative',
+                                overflow: 'hidden',
+                                border: '1px solid #222'
                             }}>
-                                <div style={{ borderBottom: '2px solid #333', paddingBottom: '20px', marginBottom: '20px' }}>
-                                    <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', margin: 0 }}>FLAMOURE</h3>
-                                    <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px', opacity: 0.5 }}>OFFICIAL_INVOICE</span>
+                                {/* Watermark */}
+                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-15deg)', fontSize: '5rem', opacity: 0.03, fontFamily: 'var(--font-serif)', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+                                    FLAMOURE
                                 </div>
 
-                                <div style={{ marginBottom: '20px', fontSize: '12px' }}>
-                                    <div className="flex justify-between">
-                                        <span style={{ opacity: 0.5 }}>ORDER_ID</span>
-                                        <strong>{orderInfo?.code}</strong>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span style={{ opacity: 0.5 }}>DATE</span>
-                                        <strong>{new Date().toLocaleDateString()}</strong>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span style={{ opacity: 0.5 }}>CUSTOMER</span>
-                                        <strong>{customerData.customer_name}</strong>
-                                    </div>
-                                </div>
-
-                                <div style={{ marginBottom: '20px' }}>
-                                    {cart.map((item, i) => (
-                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
-                                            <span>{item.quantity || 1}x {item.name}</span>
-                                            <span>Rp {(item.price * (item.quantity || 1)).toLocaleString()}</span>
+                                <div style={{ borderBottom: '1px solid #333', paddingBottom: '20px', marginBottom: '30px' }}>
+                                    <div className="flex justify-between items-end">
+                                        <div>
+                                            <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.5rem', margin: 0, lineHeight: 0.8 }}>FLAMOURE</h3>
+                                            <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px', opacity: 0.5, letterSpacing: '0.2em' }}>OFFICIAL_ARTIFACT_INVOICE</span>
                                         </div>
-                                    ))}
-                                </div>
-
-                                <div style={{ borderTop: '2px dashed #333', paddingTop: '15px' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px' }}>TOTAL_AMOUNT</span>
-                                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#00d4ff' }}>Rp {totalPrice.toLocaleString()}</span>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px', display: 'block' }}>ORD_CODE</span>
+                                            <strong style={{ fontSize: '14px', color: 'var(--accent-blue)' }}>#{orderInfo?.code}</strong>
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div style={{ marginTop: '30px', textAlign: 'center' }}>
-                                    <p style={{ fontFamily: 'var(--font-pixel)', fontSize: '8px', opacity: 0.3 }}>THANK_YOU_FOR_CRAFTING_WITH_US</p>
+                                <div style={{ marginBottom: '30px', fontSize: '11px' }}>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                        <div>
+                                            <span style={{ opacity: 0.4, display: 'block', marginBottom: '4px' }} className="font-pixel">ISSUED_TO</span>
+                                            <strong style={{ fontSize: '12px' }}>{customerData.customer_name}</strong>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ opacity: 0.4, display: 'block', marginBottom: '4px' }} className="font-pixel">DATE_STAMP</span>
+                                            <strong style={{ fontSize: '12px' }}>{new Date().toLocaleDateString('id-ID')}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '30px' }}>
+                                    <span style={{ opacity: 0.4, display: 'block', marginBottom: '15px' }} className="font-pixel">MANIFEST_DETAILS</span>
+                                    {cart.length > 0 ? cart.map((item, i) => (
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '12px' }}>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontWeight: 700 }}>{item.name}</div>
+                                                <div style={{ fontSize: '9px', opacity: 0.5 }}>{item.quantity || 1} UNIT(S)</div>
+                                            </div>
+                                            <span style={{ fontWeight: 800 }}>Rp {(item.price * (item.quantity || 1)).toLocaleString()}</span>
+                                        </div>
+                                    )) : (
+                                        <div style={{ fontSize: '12px', opacity: 0.5, fontStyle: 'italic' }}>Recovering order manifest...</div>
+                                    )}
+                                </div>
+
+                                <div style={{ borderTop: '1px solid #333', paddingTop: '20px', marginTop: '20px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px', opacity: 0.6 }}>SETTLEMENT_TOTAL</span>
+                                        <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--accent-blue)' }}>Rp {finalPrice.toLocaleString()}</span>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '40px', textAlign: 'center' }}>
+                                    <p style={{ fontFamily: 'var(--font-pixel)', fontSize: '8px', opacity: 0.3, letterSpacing: '0.4em' }}>VERIFIED_BY_FLAMOURE_ARCHIVES</p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-3">
-                            <button onClick={downloadInvoice} className="btn-liquid" style={{ width: '100%', background: 'transparent' }}>
+                        <div className="flex flex-col gap-4" style={{ marginTop: '1rem' }}>
+                            <button onClick={downloadInvoice} className="btn-liquid" style={{ width: '100%', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--border-color)' }}>
                                 DOWNLOAD_INVOICE_PNG
                             </button>
                             <a
@@ -293,7 +314,14 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                 target="_blank"
                                 rel="noreferrer"
                                 className="btn-liquid"
-                                style={{ width: '100%', textDecoration: 'none', background: '#25D366', color: 'white', borderColor: '#25D366' }}
+                                style={{
+                                    width: '100%',
+                                    textDecoration: 'none',
+                                    background: '#25D366',
+                                    color: 'white',
+                                    borderColor: '#25D366',
+                                    fontWeight: 900
+                                }}
                             >
                                 CONFIRM_VIA_WHATSAPP
                             </a>
