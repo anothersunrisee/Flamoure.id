@@ -38,7 +38,21 @@ const App: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Listen for #sysadminpanel in URL
+    if (window.location.hash === '#sysadminpanel') {
+      setCurrentView('admin');
+    }
   }, [currentView]);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      if (window.location.hash === '#sysadminpanel') {
+        setCurrentView('admin');
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   const handleLandingProductClick = (product: Product) => {
     if (product.id === 'ps-main') {
@@ -427,7 +441,7 @@ const App: React.FC = () => {
           "Archiving moments, crafting artifacts—for those who feel the weight of digital nostalgia."
         </p>
         <div className="footer-meta">
-          <span onClick={() => setCurrentView('admin')} style={{ cursor: 'default' }}>#sysadminpanel</span>
+          <span>JKT / ID</span>
           <span>&copy; {new Date().getFullYear()} Visual Syndicate</span>
         </div>
       </footer>
