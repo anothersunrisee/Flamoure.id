@@ -37,22 +37,24 @@ const App: React.FC = () => {
   }, [isDarkMode]);
 
   useEffect(() => {
-    window.scrollTo(0, 0);
-    // Listen for #sysadminpanel in URL
-    if (window.location.hash === '#sysadminpanel') {
-      setCurrentView('admin');
-    }
-  }, [currentView]);
-
-  useEffect(() => {
-    const handleHashChange = () => {
-      if (window.location.hash === '#sysadminpanel') {
+    const checkHash = () => {
+      const hash = window.location.hash.toLowerCase();
+      if (hash === '#sysadminpanel') {
         setCurrentView('admin');
       }
     };
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+
+    // Run once on load
+    checkHash();
+
+    // Listen for changes
+    window.addEventListener('hashchange', checkHash);
+    return () => window.removeEventListener('hashchange', checkHash);
   }, []);
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentView]);
 
   const handleLandingProductClick = (product: Product) => {
     if (product.id === 'ps-main') {
