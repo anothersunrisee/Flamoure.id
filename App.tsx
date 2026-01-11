@@ -334,7 +334,7 @@ const App: React.FC = () => {
           "Archiving moments, crafting artifacts—for those who feel the weight of digital nostalgia."
         </p>
         <div className="footer-meta">
-          <span onClick={() => setCurrentView('admin')} style={{ cursor: 'default' }}>JKT / ID</span>
+          <span onClick={() => setCurrentView('admin')} style={{ cursor: 'default' }}>#sysadminpanel</span>
           <span>&copy; {new Date().getFullYear()} Visual Syndicate</span>
         </div>
       </footer>

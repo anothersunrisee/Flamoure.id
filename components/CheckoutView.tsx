@@ -88,7 +88,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
     };
 
     const generateWhatsAppLink = () => {
-        const phone = "6281246197368"; // Admin phone
+        const phone = "62895363898438"; // Admin phone
         const text = encodeURIComponent(
             `Halo Flamoure! Saya ingin konfirmasi pesanan.\n\n` +
             `*Order Code:* ${orderInfo?.code}\n` +

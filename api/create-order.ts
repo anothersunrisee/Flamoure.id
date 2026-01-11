@@ -1,6 +1,5 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
 import { supabase } from './lib/supabase.js';
-import { getDriveHandler } from './lib/drive.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {
@@ -19,23 +18,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const order_code = `FLAM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
 
-        // 1. Initialize Drive safely
-        const drive = getDriveHandler();
-
-        // 2. Create Folder in Google Drive
-        const folder = await drive.files.create({
-            requestBody: {
-                name: order_code,
-                mimeType: 'application/vnd.google-apps.folder',
-                parents: [process.env.GDRIVE_PARENT_FOLDER_ID!],
-            },
-            fields: 'id',
-            supportsAllDrives: true,
-        });
-
-        const drive_folder_id = folder.data.id;
-
-        // 3. Create Order in Supabase
+        // 1. Create Order in Supabase
         const { data: order, error: orderError } = await supabase
             .from('orders')
             .insert([
@@ -46,7 +29,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     customer_phone,
                     customer_address,
                     total_price,
-                    drive_folder_id,
                     status: 'pending'
                 }
             ])
@@ -55,7 +37,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (orderError) throw orderError;
 
-        // 4. Create Order Items
+        // 2. Create Order Items
         const orderItems = items.map((item: any) => ({
             order_id: order.id,
             product_id: item.id || item.product_id,
@@ -73,26 +55,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(200).json({
             success: true,
             order_id: order.id,
-            order_code,
-            drive_folder_id
+            order_code
         });
     } catch (error: any) {
         console.error('FULL_ERROR_LOG:', error);
-
-        let message = error.message;
-        if (message.includes('DRIVE_CONFIG_ERROR')) {
-            message = 'Format GOOGLE_SERVICE_ACCOUNT di Vercel Dashboard salah (harus JSON valid).';
-        } else if (message.includes('parents')) {
-            message = 'GDRIVE_PARENT_FOLDER_ID salah atau folder tidak dishare ke email Service Account.';
-        } else if (error.code === '42P01') {
-            message = 'Tabel tidak ditemukan di Supabase. Pastikan sudah menjalankan SQL Script di README.';
-        } else if (error.code === '23502') {
-            message = `Data tidak lengkap: ${error.message}`;
-        }
-
-        return res.status(500).json({
-            error: message,
-            details: error
-        });
+        return res.status(500).json({ error: error.message, details: error });
     }
 }

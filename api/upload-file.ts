@@ -1,5 +1,4 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDriveHandler } from './lib/drive.js';
 import { supabase } from './lib/supabase.js';
 import formidable from 'formidable';
 import fs from 'fs';
@@ -26,44 +25,47 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
 
         const order_id = fields.order_id?.[0];
-        const folder_id = fields.folder_id?.[0];
         const uploadFiles = files.files;
 
-        if (!order_id || !folder_id || !uploadFiles) {
+        if (!order_id || !uploadFiles) {
             return res.status(400).json({ error: 'Missing required data' });
         }
 
-        const drive = getDriveHandler();
         const fileList = Array.isArray(uploadFiles) ? uploadFiles : [uploadFiles];
         const results = [];
 
         for (const file of fileList) {
-            const driveFile = await drive.files.create({
-                requestBody: {
-                    name: file.originalFilename || `upload-${Date.now()}`,
-                    parents: [folder_id],
-                },
-                media: {
-                    mimeType: file.mimetype,
-                    body: fs.createReadStream(file.filepath),
-                },
-                fields: 'id',
-                supportsAllDrives: true,
-            });
+            const fileExt = file.originalFilename.split('.').pop();
+            const fileName = `${order_id}/${Date.now()}-${file.originalFilename}`;
+            const fileBuffer = fs.readFileSync(file.filepath);
 
-            if (driveFile.data.id) {
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('orders')
+                .upload(fileName, fileBuffer, {
+                    contentType: file.mimetype,
+                    upsert: true
+                });
+
+            if (uploadError) throw uploadError;
+
+            if (uploadData) {
+                // Get public URL
+                const { data: { publicUrl } } = supabase.storage
+                    .from('orders')
+                    .getPublicUrl(fileName);
+
                 await supabase.from('uploads').insert([
                     {
                         order_id,
                         file_name: file.originalFilename,
-                        drive_file_id: driveFile.data.id
+                        drive_file_id: publicUrl // Renaming Drive ID to Storage URL conceptually here
                     }
                 ]);
-                results.push(driveFile.data.id);
+                results.push(publicUrl);
             }
         }
 
-        return res.status(200).json({ success: true, file_ids: results });
+        return res.status(200).json({ success: true, urls: results });
     } catch (error: any) {
         console.error('Upload error:', error);
         return res.status(500).json({ error: error.message });
