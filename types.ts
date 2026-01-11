@@ -5,6 +5,12 @@ export interface Product {
   price: number;
   image: string;
   type: 'photostrip' | 'merch';
+  quantity?: number;
+  metadata?: {
+    images?: string[];
+    templateId?: string;
+    templateName?: string;
+  };
 }
 
 export interface PhotostripTemplate {

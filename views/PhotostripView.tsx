@@ -12,7 +12,7 @@ interface ImageConfig {
 
 interface PhotostripViewProps {
   initialTemplate?: PhotostripTemplate;
-  onCheckout: (templateName: string) => void;
+  onCheckout: (templateName: string, images: string[]) => void;
 }
 
 type EditorTab = 'FRAMES' | 'ADJUST' | 'STYLE';
@@ -532,7 +532,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
             <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
               <button
                 disabled={images.length < 2 || isProcessing || swapSourceIndex !== null}
-                onClick={() => onCheckout(selectedTemplate.name)}
+                onClick={() => onCheckout(selectedTemplate.name, images)}
                 className="btn-primary"
                 style={{ width: '100%', fontSize: '0.9rem', padding: '1.25rem' }}
               >

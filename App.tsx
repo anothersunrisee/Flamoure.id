@@ -53,39 +53,77 @@ const App: React.FC = () => {
   };
 
   const handleSeriesSelect = (series: Product) => {
-    setCart(prev => [...prev, series]);
+    // When selecting a series, we don't automatically add it to cart.
+    // Instead, we open the builder with that series template.
+    const template = TEMPLATES.find(t => t.backgroundImage === series.image) || TEMPLATES[0];
+    setActiveTemplate(template);
+    setSelectedProduct(series);
+    setCurrentView('builder');
+  };
+
+  const addToCart = (product: Product, metadata?: any) => {
+    setCart(prev => {
+      // Check if product already exists
+      const existingItemIndex = prev.findIndex(item => {
+        if (item.id !== product.id) return false;
+        if (item.type === 'photostrip' && metadata?.images) {
+          // Photostrips only match if they have the EXACT same images
+          return JSON.stringify(item.metadata?.images) === JSON.stringify(metadata.images);
+        }
+        return true;
+      });
+
+      if (existingItemIndex > -1) {
+        const newCart = [...prev];
+        newCart[existingItemIndex] = {
+          ...newCart[existingItemIndex],
+          quantity: (newCart[existingItemIndex].quantity || 1) + 1
+        };
+        return newCart;
+      }
+
+      return [...prev, { ...product, quantity: 1, metadata }];
+    });
     setCurrentView('cart');
   };
 
-  const handleEditPhotostrip = (product: Product) => {
-    // Find matching template by name or ID
-    const template = TEMPLATES.find(t => t.backgroundImage === product.image) || TEMPLATES[0];
-    setActiveTemplate(template);
-    setSelectedProduct(product);
-    setCurrentView('builder');
-  };
-  const addToCart = (product: Product) => {
-    setCart(prev => [...prev, product]);
+  const updateQuantity = (index: number, delta: number) => {
+    setCart(prev => {
+      const newCart = [...prev];
+      const item = newCart[index];
+      const newQty = (item.quantity || 1) + delta;
+      if (newQty <= 0) return prev;
+      newCart[index] = { ...item, quantity: newQty };
+      return newCart;
+    });
   };
 
   const calculateTotal = () => {
-    const photostrips = cart.filter(item => item.type === 'photostrip');
-    const merch = cart.filter(item => item.type !== 'photostrip');
+    // New simplified but accurate total
+    let total = 0;
+    let psPool: Product[] = []; // for bulk discount calculation
 
-    // Photostrip pricing: 3000 each, but 4 for 10000
-    const psCount = photostrips.length;
-    const psBundles = Math.floor(psCount / 4);
-    const psRemainder = psCount % 4;
-    const psTotal = (psBundles * 10000) + (psRemainder * 3000);
+    cart.forEach(item => {
+      if (item.type === 'photostrip') {
+        const qty = item.quantity || 1;
+        for (let i = 0; i < qty; i++) psPool.push(item);
+      } else {
+        total += item.price * (item.quantity || 1);
+      }
+    });
 
-    const merchTotal = merch.reduce((sum, item) => sum + item.price, 0);
+    // PS Logic: 3000 each, 4 for 10000
+    const psBundles = Math.floor(psPool.length / 4);
+    const psRemainder = psPool.length % 4;
+    total += (psBundles * 10000) + (psRemainder * 3000);
 
-    return psTotal + merchTotal;
+    return total;
   };
 
-  const handleCheckoutFromBuilder = (templateName: string) => {
-    setSelectedTemplateName(templateName);
-    setCurrentView('checkout');
+  const handleCheckoutFromBuilder = (templateName: string, images: string[]) => {
+    if (selectedProduct) {
+      addToCart(selectedProduct, { templateName, images });
+    }
   };
 
   const handleCheckoutFromCart = () => {
@@ -128,7 +166,10 @@ const App: React.FC = () => {
               )}
             </button>
             <button
-              onClick={() => setCurrentView('builder')}
+              onClick={() => {
+                if (!selectedProduct) setSelectedProduct(PHOTOSTRIP_SERIES[0]);
+                setCurrentView('builder');
+              }}
               className={`nav-btn ${currentView === 'builder' ? 'active' : ''}`}
             >
               Studio
@@ -247,26 +288,42 @@ const App: React.FC = () => {
                 </div>
 
                 {cart.map((item, idx) => (
-                  <div key={idx} className="cart-item">
-                    <img src={item.image} alt={item.name} style={{ width: '100%', aspectRatio: '1/1', objectFit: 'cover', borderRadius: '1rem' }} />
-                    <div style={{ flex: 1 }}>
-                      <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '10px' }}>TYPE: {item.type.toUpperCase()}</span>
-                      <h4 className="font-primary" style={{ fontSize: '1.25rem', fontWeight: 800, marginTop: '0.25rem' }}>{item.name}</h4>
-                      <p className="font-primary" style={{ opacity: 0.6, fontSize: '0.9rem' }}>Rp {item.price.toLocaleString()}</p>
-                    </div>
-                    <div className="cart-item-actions" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                      {item.type === 'photostrip' && (
-                        <button onClick={() => handleEditPhotostrip(item)} className="btn-liquid" style={{ fontSize: '10px', padding: '0.6rem 1rem' }}>
-                          INJECT_DATA
-                        </button>
+                  <div key={idx} className="cart-item" style={{ alignItems: 'center', padding: '1.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: '1.25rem' }}>
+                    <div style={{ position: 'relative', width: '80px', height: '110px', background: 'var(--bg-primary)', padding: '5px', borderRadius: '0.5rem', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                      {item.type === 'photostrip' && item.metadata?.images ? (
+                        item.metadata.images.map((img: string, i: number) => (
+                          <img key={i} src={img} alt="" style={{ width: '100%', height: '30px', objectFit: 'cover', borderRadius: '2px' }} />
+                        ))
+                      ) : (
+                        <img src={item.image} alt={item.name} style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }} />
                       )}
-                      <button onClick={handleCheckoutFromCart} className="btn-liquid" style={{ fontSize: '10px', padding: '0.6rem 1rem' }}>
-                        CHECKOUT
-                      </button>
+                      {item.type === 'photostrip' && item.metadata?.images && (
+                        <div style={{ position: 'absolute', top: '-8px', right: '-8px', background: 'var(--accent-blue)', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '9px', color: 'white', border: '2px solid var(--bg-primary)', boxShadow: '0 4px 10px rgba(0,0,0,0.1)' }}>
+                          ✓
+                        </div>
+                      )}
+                    </div>
+
+                    <div style={{ flex: 1, marginLeft: '1.5rem' }}>
+                      <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '9px', letterSpacing: '0.1em' }}>{item.type.toUpperCase()}</span>
+                      <h4 className="font-primary" style={{ fontSize: '1.1rem', fontWeight: 800, margin: '2px 0' }}>{item.name}</h4>
+                      <p className="font-pixel" style={{ opacity: 0.5, fontSize: '10px' }}>UNIT_PRICE: Rp {item.price.toLocaleString()}</p>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                      <div className="qty-control" style={{ display: 'flex', alignItems: 'center', background: 'var(--bg-secondary)', borderRadius: '0.75rem', padding: '0.25rem', border: '1px solid var(--border-color)' }}>
+                        <button onClick={() => updateQuantity(idx, -1)} className="qty-btn" style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '14px' }}>-</button>
+                        <span className="font-pixel" style={{ width: '30px', textAlign: 'center', fontSize: '12px' }}>{item.quantity || 1}</span>
+                        <button onClick={() => updateQuantity(idx, 1)} className="qty-btn" style={{ width: '28px', height: '28px', border: 'none', background: 'transparent', color: 'var(--text-primary)', cursor: 'pointer', fontSize: '14px' }}>+</button>
+                      </div>
+
+                      <div style={{ textAlign: 'right', minWidth: '100px' }}>
+                        <span className="font-primary" style={{ fontWeight: 800, fontSize: '1.1rem' }}>Rp {(item.price * (item.quantity || 1)).toLocaleString()}</span>
+                      </div>
+
                       <button
                         onClick={() => removeFromCart(idx)}
-                        className="nav-btn"
-                        style={{ padding: '0.5rem', color: '#ff4d4d', background: 'transparent', border: 'none' }}
+                        style={{ background: 'transparent', border: 'none', color: '#ff4d4d', cursor: 'pointer', padding: '0.5rem', fontSize: '16px', opacity: 0.5 }}
                       >
                         ✕
                       </button>
@@ -274,20 +331,51 @@ const App: React.FC = () => {
                   </div>
                 ))}
 
-                <div style={{ marginTop: '2.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem' }}>
-                  <div style={{ width: '100%', maxWidth: '400px', background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                      <span className="font-pixel" style={{ fontSize: '10px', opacity: 0.6 }}>SUBTOTAL</span>
-                      <span className="font-primary" style={{ fontWeight: 700 }}>Rp {calculateTotal().toLocaleString()}</span>
-                    </div>
-                    {cart.filter(i => i.type === 'photostrip').length >= 4 && (
-                      <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ccff00', fontSize: '10px' }} className="font-pixel">
-                        <span>BULK_DISCOUNT_APPLIED</span>
-                        <span>SAVED_BY_FLAM_PROMO</span>
+                <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'flex-end' }}>
+                  <div style={{
+                    width: '100%',
+                    maxWidth: '500px',
+                    background: 'var(--bg-secondary)',
+                    padding: '2rem',
+                    borderRadius: '1.5rem',
+                    border: '1px solid var(--border-color)',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: '2rem'
+                  }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                        <span className="font-pixel" style={{ fontSize: '10px', opacity: 0.6 }}>TOTAL_SUBTOTAL</span>
                       </div>
-                    )}
-                  </div>
+                      <span className="font-primary" style={{ fontSize: '2rem', fontWeight: 900 }}>Rp {calculateTotal().toLocaleString()}</span>
 
+                      {cart.some(i => i.type === 'photostrip' && (i.quantity || 1) >= 4) && (
+                        <div style={{ color: '#ccff00', fontSize: '9px', marginTop: '0.5rem' }} className="font-pixel">
+                          [ BULK_DISCOUNT_APPLIED ]
+                        </div>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={handleCheckoutFromCart}
+                      className="btn-liquid"
+                      style={{
+                        background: '#00d4ff',
+                        color: '#000',
+                        borderColor: '#00d4ff',
+                        padding: '1.25rem 2.5rem',
+                        fontSize: '12px',
+                        fontWeight: 900,
+                        boxShadow: '0 10px 30px rgba(0, 212, 255, 0.3)'
+                      }}
+                    >
+                      PROCEED_TO_CHECKOUT ➔
+                    </button>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
                   <button onClick={() => setCurrentView('home')} className="cart-continue-btn" style={{ margin: 0 }}>
                     ← ADD_MORE_FRAGMENTS
                   </button>
@@ -322,7 +410,10 @@ const App: React.FC = () => {
           <span style={{ fontSize: '1.2rem' }}>🛒</span>
           <span style={{ fontSize: '9px', fontWeight: 700 }}>BAG</span>
         </button>
-        <button onClick={() => setCurrentView('builder')} className={`m-nav-btn ${currentView === 'builder' ? 'active' : ''}`}>
+        <button onClick={() => {
+          if (!selectedProduct) setSelectedProduct(PHOTOSTRIP_SERIES[0]);
+          setCurrentView('builder');
+        }} className={`m-nav-btn ${currentView === 'builder' ? 'active' : ''}`}>
           <span style={{ fontSize: '1.2rem' }}>⌬</span>
           <span style={{ fontSize: '9px', fontWeight: 700 }}>STUDIO</span>
         </button>

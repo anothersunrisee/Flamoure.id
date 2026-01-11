@@ -117,13 +117,16 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                         <div className="flex flex-col gap-4">
                             {cart.map((item, i) => (
                                 <div key={i} className="flex justify-between items-center py-2 border-b border-color" style={{ opacity: 0.8 }}>
-                                    <span className="font-primary">{item.name}</span>
-                                    <span className="font-pixel">Rp {item.price.toLocaleString()}</span>
+                                    <div className="flex flex-col">
+                                        <span className="font-primary">{item.name}</span>
+                                        <span className="font-pixel" style={{ fontSize: '10px', color: 'var(--accent-blue)' }}>QTY: {item.quantity || 1}</span>
+                                    </div>
+                                    <span className="font-pixel">Rp {(item.price * (item.quantity || 1)).toLocaleString()}</span>
                                 </div>
                             ))}
                             <div className="flex justify-between items-center pt-4">
-                                <span className="font-pixel" style={{ color: 'var(--accent-blue)' }}>TOTAL_ESTIMATED</span>
-                                <span className="font-primary" style={{ fontSize: '1.5rem', fontWeight: 900 }}>Rp {totalPrice.toLocaleString()}</span>
+                                <span className="font-pixel" style={{ color: 'var(--accent-blue)' }}>FINAL_REVENUE</span>
+                                <span className="font-primary" style={{ fontSize: '1.8rem', fontWeight: 900 }}>Rp {totalPrice.toLocaleString()}</span>
                             </div>
                         </div>
                         <button onClick={() => setCurrentStep('data')} className="btn-liquid" style={{ marginTop: '2rem' }}>

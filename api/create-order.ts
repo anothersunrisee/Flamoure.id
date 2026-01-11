@@ -37,14 +37,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         if (orderError) throw orderError;
 
-        // 2. Create Order Items
-        const orderItems = items.map((item: any) => ({
-            order_id: order.id,
-            product_id: item.id || item.product_id,
-            product_name: item.name || item.product_name,
-            price: item.price,
-            metadata: item.metadata || {}
-        }));
+        // 2. Create Order Items (Flattened based on quantity)
+        const orderItems: any[] = [];
+        items.forEach((item: any) => {
+            const qty = item.quantity || 1;
+            for (let i = 0; i < qty; i++) {
+                orderItems.push({
+                    order_id: order.id,
+                    product_id: item.id || item.product_id,
+                    product_name: item.name || item.product_name,
+                    price: item.price,
+                    metadata: item.metadata || {}
+                });
+            }
+        });
 
         const { error: itemsError } = await supabase
             .from('order_items')
