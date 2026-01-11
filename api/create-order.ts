@@ -74,7 +74,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             drive_folder_id
         });
     } catch (error: any) {
-        console.error('Create Order Error:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('FULL_ERROR_LOG:', error);
+        let message = error.message;
+
+        // Help user identify the source
+        if (message.includes('JSON.parse')) message = 'GOOGLE_SERVICE_ACCOUNT di .env bukan JSON yang valid. Pastikan salin SELURUH isi file JSON.';
+        if (message.includes('parents')) message = 'GDRIVE_PARENT_FOLDER_ID tidak valid atau Service Account tidak punya akses ke folder tersebut.';
+        if (message.includes('orders')) message = 'Tabel "orders" tidak ditemukan di Supabase. Pastikan sudah menjalankan SQL Script di README.';
+
+        return res.status(500).json({
+            error: message,
+            step: 'Backend execution failed'
+        });
     }
 }

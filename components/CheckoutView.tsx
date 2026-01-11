@@ -42,10 +42,12 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                 setOrderInfo({ id: data.order_id, code: data.order_code, folderId: data.drive_folder_id });
                 setCurrentStep('upload');
             } else {
-                alert('Failed to create order: ' + data.error);
+                console.error('API Error:', data);
+                alert('Server Error: ' + (data.error || 'Check console for details'));
             }
         } catch (err) {
-            alert('Error creating order');
+            console.error('Fetch Error:', err);
+            alert('Connection Error: Pastikan Anda menjalankan server dengan "vercel dev" jika mengetes API secara lokal.');
         } finally {
             setIsSubmitting(false);
         }
