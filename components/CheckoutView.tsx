@@ -13,10 +13,10 @@ type Step = 'review' | 'data' | 'upload' | 'success';
 export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, onSuccess, onBack }) => {
     const [currentStep, setCurrentStep] = useState<Step>('review');
     const [customerData, setCustomerData] = useState({
-        name: '',
-        email: '',
-        phone: '',
-        address: ''
+        customer_name: '',
+        customer_email: '',
+        customer_phone: '',
+        customer_address: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [orderInfo, setOrderInfo] = useState<{ id: string, code: string, folderId: string } | null>(null);
@@ -92,7 +92,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
         const text = encodeURIComponent(
             `Halo Flamoure! Saya ingin konfirmasi pesanan.\n\n` +
             `*Order Code:* ${orderInfo?.code}\n` +
-            `*Nama:* ${customerData.name}\n` +
+            `*Nama:* ${customerData.customer_name}\n` +
             `*Total:* Rp ${totalPrice.toLocaleString()}\n\n` +
             `Saya akan melakukan pembayaran via [Metode Pembayaran]. Mohon konfirmasinya.`
         );
@@ -143,8 +143,8 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                 <label>FULL_NAME</label>
                                 <input
                                     type="text"
-                                    value={customerData.name}
-                                    onChange={e => setCustomerData({ ...customerData, name: e.target.value })}
+                                    value={customerData.customer_name}
+                                    onChange={e => setCustomerData({ ...customerData, customer_name: e.target.value })}
                                     placeholder="John Doe"
                                 />
                             </div>
@@ -152,8 +152,8 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                 <label>EMAIL_ADDRESS</label>
                                 <input
                                     type="email"
-                                    value={customerData.email}
-                                    onChange={e => setCustomerData({ ...customerData, email: e.target.value })}
+                                    value={customerData.customer_email}
+                                    onChange={e => setCustomerData({ ...customerData, customer_email: e.target.value })}
                                     placeholder="john@example.com"
                                 />
                             </div>
@@ -161,15 +161,15 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                 <label>PHONE_NUMBER</label>
                                 <input
                                     type="tel"
-                                    value={customerData.phone}
-                                    onChange={e => setCustomerData({ ...customerData, phone: e.target.value })}
+                                    value={customerData.customer_phone}
+                                    onChange={e => setCustomerData({ ...customerData, customer_phone: e.target.value })}
                                     placeholder="0812..."
                                 />
                             </div>
                         </div>
                         <button
                             onClick={handleCreateOrder}
-                            disabled={isSubmitting || !customerData.name || !customerData.email || !customerData.phone}
+                            disabled={isSubmitting || !customerData.customer_name || !customerData.customer_email || !customerData.customer_phone}
                             className="btn-liquid"
                             style={{ marginTop: '2rem' }}
                         >

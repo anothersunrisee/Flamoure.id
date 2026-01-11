@@ -83,8 +83,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             message = 'Format GOOGLE_SERVICE_ACCOUNT di Vercel Dashboard salah (harus JSON valid).';
         } else if (message.includes('parents')) {
             message = 'GDRIVE_PARENT_FOLDER_ID salah atau folder tidak dishare ke email Service Account.';
-        } else if (message.includes('orders')) {
-            message = 'Tabel "orders" tidak ditemukan di Supabase. Cek tab SQL Editor.';
+        } else if (error.code === '42P01') {
+            message = 'Tabel tidak ditemukan di Supabase. Pastikan sudah menjalankan SQL Script di README.';
+        } else if (error.code === '23502') {
+            message = `Data tidak lengkap: ${error.message}`;
         }
 
         return res.status(500).json({
