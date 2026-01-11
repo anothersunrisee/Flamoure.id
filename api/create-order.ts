@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { supabase } from './lib/supabase';
-import { getDriveHandler } from './lib/drive';
+import { supabase } from './lib/supabase.js';
+import { getDriveHandler } from './lib/drive.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== 'POST') {

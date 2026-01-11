@@ -1,6 +1,6 @@
 import { VercelRequest, VercelResponse } from '@vercel/node';
-import { getDriveHandler } from './lib/drive';
-import { supabase } from './lib/supabase';
+import { getDriveHandler } from './lib/drive.js';
+import { supabase } from './lib/supabase.js';
 import formidable from 'formidable';
 import fs from 'fs';
 
