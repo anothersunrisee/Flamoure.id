@@ -333,24 +333,24 @@ const App: React.FC = () => {
 
                 <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <div style={{
-                    width: '100%',
-                    maxWidth: '500px',
+                    width: 'fit-content',
+                    minWidth: '400px',
                     background: 'var(--bg-secondary)',
-                    padding: '2rem',
+                    padding: '1.5rem 2.5rem',
                     borderRadius: '1.5rem',
                     border: '1px solid var(--border-color)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: '2rem'
+                    gap: '4rem'
                   }}>
-                    <div>
+                    <div style={{ whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
                         <span className="font-pixel" style={{ fontSize: '10px', opacity: 0.6 }}>TOTAL_SUBTOTAL</span>
                       </div>
-                      <span className="font-primary" style={{ fontSize: '2rem', fontWeight: 900 }}>Rp {calculateTotal().toLocaleString()}</span>
+                      <span className="font-primary" style={{ fontSize: '2rem', fontWeight: 900, display: 'block' }}>Rp {calculateTotal().toLocaleString()}</span>
 
-                      {cart.some(i => i.type === 'photostrip' && (i.quantity || 1) >= 4) && (
+                      {cart.some(i => (i.type === 'photostrip' && (i.quantity || 1) >= 4) || (cart.filter(item => item.type === 'photostrip').reduce((acc, curr) => acc + (curr.quantity || 1), 0) >= 4)) && (
                         <div style={{ color: '#ccff00', fontSize: '9px', marginTop: '0.5rem' }} className="font-pixel">
                           [ BULK_DISCOUNT_APPLIED ]
                         </div>
@@ -367,7 +367,9 @@ const App: React.FC = () => {
                         padding: '1.25rem 2.5rem',
                         fontSize: '12px',
                         fontWeight: 900,
-                        boxShadow: '0 10px 30px rgba(0, 212, 255, 0.3)'
+                        boxShadow: '0 10px 30px rgba(0, 212, 255, 0.3)',
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0
                       }}
                     >
                       PROCEED_TO_CHECKOUT ➔
