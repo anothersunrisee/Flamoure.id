@@ -3,14 +3,25 @@ import { supabase } from './lib/supabase.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const authHeader = req.headers.authorization;
-    const adminUser = req.headers['x-admin-user'];
+    const adminUser = req.headers['x-admin-user'] as string;
+
+    const expectedUser = (process.env.ADMIN_USERNAME || '').trim();
+    const expectedSecret = (process.env.ADMIN_SECRET || '').trim();
+
+    // Debugging (Vercel Logs Only)
+    if (!expectedUser || !expectedSecret) {
+        console.error('CRITICAL: ADMIN_USERNAME or ADMIN_SECRET env vars are MISSING in Vercel settings.');
+    }
 
     if (
         !authHeader ||
-        authHeader !== `Bearer ${process.env.ADMIN_SECRET}` ||
-        adminUser !== process.env.ADMIN_USERNAME
+        authHeader !== `Bearer ${expectedSecret}` ||
+        adminUser?.trim() !== expectedUser
     ) {
-        return res.status(401).json({ error: 'Unauthorized' });
+        return res.status(401).json({
+            error: 'Unauthorized',
+            debug: process.env.NODE_ENV === 'development' ? 'Check your .env' : 'Check Vercel Env Vars'
+        });
     }
 
     try {
