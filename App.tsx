@@ -11,6 +11,9 @@ import { TEMPLATES, PHOTOSTRIP_SERIES, KEYCHAIN_PRODUCTS, STICKER_PRODUCTS } fro
 
 const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<'home' | 'builder' | 'cart' | 'series' | 'shop' | 'checkout' | 'admin'>('home');
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadProgress, setLoadProgress] = useState(0);
+  const [isExiting, setIsExiting] = useState(false);
   const [shopCategory, setShopCategory] = useState<'keychain' | 'sticker'>('keychain');
   const [cart, setCart] = useState<Product[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -24,6 +27,44 @@ const App: React.FC = () => {
     }
     return false;
   });
+
+  // Preload Critical Assets
+  useEffect(() => {
+    const assets = [
+      '/logo/favicon-01.png',
+      ...PHOTOSTRIP_SERIES.map(p => p.image),
+      ...KEYCHAIN_PRODUCTS.map(p => p.image),
+      ...STICKER_PRODUCTS.map(p => p.image).slice(0, 5), // Only first 5 stickers to save time
+    ];
+
+    let loadedCount = 0;
+    const total = assets.length;
+
+    const loadAsset = (src: string) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.src = src;
+        img.onload = () => {
+          loadedCount++;
+          setLoadProgress(Math.round((loadedCount / total) * 100));
+          resolve(src);
+        };
+        img.onerror = () => {
+          loadedCount++; // Count even if error to avoid stuck loading
+          setLoadProgress(Math.round((loadedCount / total) * 100));
+          resolve(src);
+        };
+      });
+    };
+
+    Promise.all(assets.map(loadAsset)).then(() => {
+      // Small delay for branding visibility
+      setTimeout(() => {
+        setIsExiting(true);
+        setTimeout(() => setIsLoading(false), 800);
+      }, 1500);
+    });
+  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -149,6 +190,25 @@ const App: React.FC = () => {
   const removeFromCart = (index: number) => {
     setCart(prev => prev.filter((_, i) => i !== index));
   };
+
+  if (isLoading) {
+    return (
+      <div className={`preloader ${isExiting ? 'fade-exit-active' : ''}`}>
+        <div className="preloader-content text-center">
+          <div className="preloader-logo font-serif">FLAMOURE</div>
+          <div className="preloader-status font-pixel">CRAFTING_YOUR_ARTIFACTS...</div>
+          <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
+            <div className="preloader-bar">
+              <div className="preloader-progress" style={{ width: `${loadProgress}%` }}></div>
+            </div>
+          </div>
+          <div style={{ marginTop: '1rem' }} className="font-pixel">
+            <span style={{ fontSize: '9px', opacity: 0.4 }}>LOADING_SEQUENCE_{loadProgress}%</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`app-container ${isDarkMode ? 'dark' : ''}`}>
