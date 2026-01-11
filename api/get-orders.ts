@@ -3,7 +3,13 @@ import { supabase } from './lib/supabase.js';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
     const authHeader = req.headers.authorization;
-    if (!authHeader || authHeader !== `Bearer ${process.env.ADMIN_SECRET}`) {
+    const adminUser = req.headers['x-admin-user'];
+
+    if (
+        !authHeader ||
+        authHeader !== `Bearer ${process.env.ADMIN_SECRET}` ||
+        adminUser !== process.env.ADMIN_USERNAME
+    ) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
 
