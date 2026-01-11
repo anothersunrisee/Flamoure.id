@@ -48,6 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                     body: fs.createReadStream(file.filepath),
                 },
                 fields: 'id',
+                supportsAllDrives: true,
             });
 
             if (driveFile.data.id) {

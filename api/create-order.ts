@@ -30,6 +30,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 parents: [process.env.GDRIVE_PARENT_FOLDER_ID!],
             },
             fields: 'id',
+            supportsAllDrives: true,
         });
 
         const drive_folder_id = folder.data.id;
