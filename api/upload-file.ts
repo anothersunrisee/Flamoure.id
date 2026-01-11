@@ -25,6 +25,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         });
 
         const order_id = fields.order_id?.[0];
+        const prefix = fields.prefix?.[0] || '';
         const uploadFiles = files.files;
 
         if (!order_id || !uploadFiles) {
@@ -35,8 +36,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         const results = [];
 
         for (const file of fileList) {
-            const fileExt = file.originalFilename.split('.').pop();
-            const fileName = `${order_id}/${Date.now()}-${file.originalFilename}`;
+            // Path structure: /order_id/prefix-filename
+            const safePrefix = prefix ? `${prefix.replace(/[^a-z0-9]/gi, '_').toLowerCase()}-` : '';
+            const fileName = `${order_id}/${safePrefix}${Date.now()}-${file.originalFilename.replace(/[^a-z0-9.]/gi, '_')}`;
             const fileBuffer = fs.readFileSync(file.filepath);
 
             const { data: uploadData, error: uploadError } = await supabase.storage
@@ -49,7 +51,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             if (uploadError) throw uploadError;
 
             if (uploadData) {
-                // Get public URL
                 const { data: { publicUrl } } = supabase.storage
                     .from('orders')
                     .getPublicUrl(fileName);
@@ -57,8 +58,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 await supabase.from('uploads').insert([
                     {
                         order_id,
-                        file_name: file.originalFilename,
-                        drive_file_id: publicUrl // Renaming Drive ID to Storage URL conceptually here
+                        file_name: `${prefix}${file.originalFilename}`,
+                        drive_file_id: publicUrl
                     }
                 ]);
                 results.push(publicUrl);

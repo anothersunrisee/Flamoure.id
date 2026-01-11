@@ -12,7 +12,7 @@ interface ImageConfig {
 
 interface PhotostripViewProps {
   initialTemplate?: PhotostripTemplate;
-  onCheckout: (templateName: string, images: string[]) => void;
+  onCheckout: (templateName: string, images: string[], files: File[]) => void;
 }
 
 type EditorTab = 'FRAMES' | 'ADJUST' | 'STYLE';
@@ -24,6 +24,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
     { scale: 1, x: 0, y: 0, rotation: 0 },
     { scale: 1, x: 0, y: 0, rotation: 0 },
   ]);
+  const [rawFiles, setRawFiles] = useState<(File | null)[]>([null, null, null]);
 
   const [activeTab, setActiveTab] = useState<EditorTab>('FRAMES');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -97,8 +98,21 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
 
     setIsProcessing(true);
     saveToHistory();
-    const newImages = Array.from(files).slice(0, remainingSlots).map(file => URL.createObjectURL(file as Blob));
+    const uploadedFiles = Array.from(files).slice(0, remainingSlots);
+    const newImages = uploadedFiles.map(file => URL.createObjectURL(file as Blob));
+
     setImages(prev => [...prev, ...newImages]);
+    setRawFiles(prev => {
+      const next = [...prev];
+      let fileIdx = 0;
+      for (let i = 0; i < 3 && fileIdx < uploadedFiles.length; i++) {
+        if (!next[i]) {
+          next[i] = uploadedFiles[fileIdx] as File;
+          fileIdx++;
+        }
+      }
+      return next;
+    });
     setIsProcessing(false);
   };
 
@@ -113,6 +127,11 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
       const next = [...prev];
       next.splice(index, 1);
       return [...next, { scale: 1, x: 0, y: 0, rotation: 0 }];
+    });
+    setRawFiles(prev => {
+      const next = [...prev];
+      next.splice(index, 1);
+      return [...next, null];
     });
   };
 
@@ -133,10 +152,13 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
       saveToHistory();
       const newImages = [...images];
       const newConfigs = [...configs];
+      const newRawFiles = [...rawFiles];
       [newImages[swapSourceIndex], newImages[index]] = [newImages[index], newImages[swapSourceIndex]];
       [newConfigs[swapSourceIndex], newConfigs[index]] = [newConfigs[index], newConfigs[swapSourceIndex]];
+      [newRawFiles[swapSourceIndex], newRawFiles[index]] = [newRawFiles[index], newRawFiles[swapSourceIndex]];
       setImages(newImages);
       setConfigs(newConfigs);
+      setRawFiles(newRawFiles);
       setSwapSourceIndex(null);
       setActiveSlot(index);
     } else {
@@ -532,7 +554,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
             <div style={{ marginTop: '3rem', paddingTop: '2rem', borderTop: '1px solid var(--border-color)' }}>
               <button
                 disabled={images.length < 2 || isProcessing || swapSourceIndex !== null}
-                onClick={() => onCheckout(selectedTemplate.name, images)}
+                onClick={() => onCheckout(selectedTemplate.name, images, rawFiles.filter(f => f !== null) as File[])}
                 className="btn-primary"
                 style={{ width: '100%', fontSize: '0.9rem', padding: '1.25rem' }}
               >

@@ -136,9 +136,9 @@ const App: React.FC = () => {
     return total;
   };
 
-  const handleCheckoutFromBuilder = (templateName: string, images: string[]) => {
+  const handleCheckoutFromBuilder = (templateName: string, images: string[], files: File[]) => {
     if (selectedProduct) {
-      addToCart(selectedProduct, { templateName, images });
+      addToCart(selectedProduct, { templateName, images, files });
     }
   };
 

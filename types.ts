@@ -7,7 +7,8 @@ export interface Product {
   type: 'photostrip' | 'merch';
   quantity?: number;
   metadata?: {
-    images?: string[];
+    images?: string[]; // Preview URLs
+    files?: File[];   // Raw files for uploading
     templateId?: string;
     templateName?: string;
   };

@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { Product } from '../types';
+import html2canvas from 'html2canvas';
 
 interface CheckoutViewProps {
     cart: Product[];
@@ -8,7 +9,7 @@ interface CheckoutViewProps {
     onBack: () => void;
 }
 
-type Step = 'review' | 'data' | 'upload' | 'success';
+type Step = 'review' | 'data' | 'sync' | 'success';
 
 export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, onSuccess, onBack }) => {
     const [currentStep, setCurrentStep] = useState<Step>('review');
@@ -19,128 +20,149 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
         customer_address: ''
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const [orderInfo, setOrderInfo] = useState<{ id: string, code: string, folderId: string } | null>(null);
-    const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-    const [uploadProgress, setUploadProgress] = useState(0);
+    const [syncProgress, setSyncProgress] = useState(0);
+    const [orderInfo, setOrderInfo] = useState<{ id: string, code: string } | null>(null);
 
-    const steps: Step[] = ['review', 'data', 'upload', 'success'];
+    const steps: Step[] = ['review', 'data', 'sync', 'success'];
 
-    const handleCreateOrder = async () => {
+    const handleCheckoutProcess = async () => {
         setIsSubmitting(true);
         try {
+            // 1. Create Order
             const response = await fetch('/api/create-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...customerData,
                     total_price: totalPrice,
-                    items: cart
+                    items: cart.map(item => ({
+                        ...item,
+                        metadata: { ...item.metadata, files: undefined } // Don't send raw files in JSON
+                    }))
                 })
             });
-            const data = await response.json().catch(() => ({
-                success: false,
-                error: 'Response API bukan JSON. Ini biasanya karena Backend (Vercel Function) CRASH. Cek Vercel Dashboard > Logs.'
-            }));
+            const data = await response.json();
 
-            if (data.success) {
-                setOrderInfo({ id: data.order_id, code: data.order_code, folderId: data.drive_folder_id });
-                setCurrentStep('upload');
-            } else {
-                console.error('API Error:', data);
-                alert('Server Error: ' + (data.error || 'Check console for details'));
+            if (!data.success) throw new Error(data.error || 'Failed to create order');
+
+            setOrderInfo({ id: data.order_id, code: data.order_code });
+            setCurrentStep('sync');
+
+            // 2. Upload Files Automatically
+            const itemsWithFiles = cart.filter(item => item.metadata?.files && item.metadata.files.length > 0);
+
+            if (itemsWithFiles.length > 0) {
+                let completed = 0;
+                for (let i = 0; i < itemsWithFiles.length; i++) {
+                    const item = itemsWithFiles[i];
+                    const formData = new FormData();
+                    formData.append('order_id', data.order_id);
+                    // Use item name and index as prefix
+                    formData.append('prefix', `${i + 1}_${item.name}_`);
+
+                    item.metadata!.files!.forEach(file => {
+                        formData.append('files', file);
+                    });
+
+                    const upRes = await fetch('/api/upload-file', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (upRes.ok) {
+                        completed++;
+                        setSyncProgress(Math.round((completed / itemsWithFiles.length) * 100));
+                    }
+                }
             }
-        } catch (err) {
-            console.error('Fetch Error:', err);
-            alert('Connection Error: Gagal terhubung ke API. Pastikan Vercel sudah benar-benar selesai melakukan deployment.');
+
+            setCurrentStep('success');
+            onSuccess(data.order_code);
+        } catch (err: any) {
+            console.error('Checkout Error:', err);
+            alert('Error: ' + err.message);
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const handleFileUpload = async () => {
-        if (selectedFiles.length === 0) {
-            setCurrentStep('success');
-            return;
-        }
-
-        setIsSubmitting(true);
-        const formData = new FormData();
-        formData.append('order_id', orderInfo!.id);
-        formData.append('folder_id', orderInfo!.folderId);
-        selectedFiles.forEach(file => formData.append('files', file));
+    const downloadInvoice = async () => {
+        const element = document.getElementById('invoice-capture');
+        if (!element) return;
 
         try {
-            const response = await fetch('/api/upload-file', {
-                method: 'POST',
-                body: formData
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#111',
+                scale: 2
             });
-            const data = await response.json();
-            if (data.success) {
-                setCurrentStep('success');
-            } else {
-                alert('Upload failed: ' + data.error);
-            }
+            const link = document.createElement('a');
+            link.download = `INVOICE_${orderInfo?.code}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
         } catch (err) {
-            alert('Error uploading files');
-        } finally {
-            setIsSubmitting(false);
+            console.error('Invoice generation failed', err);
         }
     };
 
     const generateWhatsAppLink = () => {
-        const phone = "62895363898438"; // Admin phone
+        const phone = "62895363898438";
         const text = encodeURIComponent(
-            `Halo Flamoure! Saya ingin konfirmasi pesanan.\n\n` +
+            `Halo Flamoure! Saya sudah melakukan checkout.\n\n` +
             `*Order Code:* ${orderInfo?.code}\n` +
             `*Nama:* ${customerData.customer_name}\n` +
             `*Total:* Rp ${totalPrice.toLocaleString()}\n\n` +
-            `Saya akan melakukan pembayaran via [Metode Pembayaran]. Mohon konfirmasinya.`
+            `Mohon instruksi pembayarannya.`
         );
         return `https://wa.me/${phone}?text=${text}`;
     };
 
     return (
         <div className="container" style={{ padding: '6rem 0' }}>
-            <div className="step-indicator">
-                {steps.map((s, idx) => (
-                    <div
-                        key={s}
-                        className={`step-dot ${steps.indexOf(currentStep) >= idx ? 'active' : ''}`}
-                    />
-                ))}
-            </div>
-
-            <div className="checkout-card">
+            <div className="checkout-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
                 {currentStep === 'review' && (
                     <div className="flex flex-col gap-6">
-                        <h2 className="font-serif" style={{ fontSize: '2.5rem' }}>Review Fragments</h2>
-                        <div className="flex flex-col gap-4">
+                        <div style={{ marginBottom: '1rem' }}>
+                            <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '10px' }}>STEP_01</span>
+                            <h2 className="font-serif" style={{ fontSize: '3rem' }}>Final Review</h2>
+                        </div>
+
+                        <div className="cart-list" style={{ padding: 0 }}>
                             {cart.map((item, i) => (
-                                <div key={i} className="flex justify-between items-center py-2 border-b border-color" style={{ opacity: 0.8 }}>
-                                    <div className="flex flex-col">
-                                        <span className="font-primary">{item.name}</span>
-                                        <span className="font-pixel" style={{ fontSize: '10px', color: 'var(--accent-blue)' }}>QTY: {item.quantity || 1}</span>
+                                <div key={i} className="flex justify-between items-center py-4 border-b border-color">
+                                    <div className="flex items-center gap-4">
+                                        <div style={{ width: '40px', height: '40px', background: 'var(--bg-primary)', borderRadius: '4px', overflow: 'hidden' }}>
+                                            <img src={item.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-primary" style={{ fontSize: '1rem', fontWeight: 700 }}>{item.name}</h4>
+                                            <span className="font-pixel" style={{ fontSize: '9px', opacity: 0.5 }}>QTY: {item.quantity || 1}</span>
+                                        </div>
                                     </div>
                                     <span className="font-pixel">Rp {(item.price * (item.quantity || 1)).toLocaleString()}</span>
                                 </div>
                             ))}
-                            <div className="flex justify-between items-center pt-4">
-                                <span className="font-pixel" style={{ color: 'var(--accent-blue)' }}>FINAL_REVENUE</span>
-                                <span className="font-primary" style={{ fontSize: '1.8rem', fontWeight: 900 }}>Rp {totalPrice.toLocaleString()}</span>
+                        </div>
+
+                        <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
+                            <div className="flex justify-between items-center">
+                                <span className="font-pixel" style={{ opacity: 0.6 }}>TOTAL_TO_PAY</span>
+                                <span className="font-primary" style={{ fontSize: '1.8rem', fontWeight: 900, color: '#00d4ff' }}>Rp {totalPrice.toLocaleString()}</span>
                             </div>
                         </div>
-                        <button onClick={() => setCurrentStep('data')} className="btn-liquid" style={{ marginTop: '2rem' }}>
-                            CONTINUE_TO_DATA
-                        </button>
-                        <button onClick={onBack} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px' }}>
-                            ← Modify Bag
+
+                        <button onClick={() => setCurrentStep('data')} className="btn-liquid" style={{ marginTop: '1rem' }}>
+                            CONFIRM_FRAGMENTS ➔
                         </button>
                     </div>
                 )}
 
                 {currentStep === 'data' && (
                     <div className="flex flex-col gap-6">
-                        <h2 className="font-serif" style={{ fontSize: '2.5rem' }}>Identity Details</h2>
+                        <div style={{ marginBottom: '1rem' }}>
+                            <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '10px' }}>STEP_02</span>
+                            <h2 className="font-serif" style={{ fontSize: '3rem' }}>Identity</h2>
+                        </div>
+
                         <div className="modal-form-body" style={{ padding: 0 }}>
                             <div className="input-field-group">
                                 <label>FULL_NAME</label>
@@ -148,106 +170,136 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                     type="text"
                                     value={customerData.customer_name}
                                     onChange={e => setCustomerData({ ...customerData, customer_name: e.target.value })}
-                                    placeholder="John Doe"
+                                    placeholder="Operator Name"
                                 />
                             </div>
                             <div className="input-field-group">
-                                <label>EMAIL_ADDRESS</label>
-                                <input
-                                    type="email"
-                                    value={customerData.customer_email}
-                                    onChange={e => setCustomerData({ ...customerData, customer_email: e.target.value })}
-                                    placeholder="john@example.com"
-                                />
-                            </div>
-                            <div className="input-field-group">
-                                <label>PHONE_NUMBER</label>
+                                <label>WHATSAPP_NUMBER</label>
                                 <input
                                     type="tel"
                                     value={customerData.customer_phone}
                                     onChange={e => setCustomerData({ ...customerData, customer_phone: e.target.value })}
-                                    placeholder="0812..."
+                                    placeholder="08..."
+                                />
+                            </div>
+                            <div className="input-field-group">
+                                <label>EMAIL</label>
+                                <input
+                                    type="email"
+                                    value={customerData.customer_email}
+                                    onChange={e => setCustomerData({ ...customerData, customer_email: e.target.value })}
+                                    placeholder="user@flamoure.id"
                                 />
                             </div>
                         </div>
+
                         <button
-                            onClick={handleCreateOrder}
-                            disabled={isSubmitting || !customerData.customer_name || !customerData.customer_email || !customerData.customer_phone}
+                            onClick={handleCheckoutProcess}
+                            disabled={isSubmitting || !customerData.customer_name || !customerData.customer_phone}
                             className="btn-liquid"
-                            style={{ marginTop: '2rem' }}
+                            style={{
+                                marginTop: '1rem',
+                                background: '#00d4ff',
+                                color: '#000',
+                                fontWeight: 900
+                            }}
                         >
-                            {isSubmitting ? 'GENERATING_ORDER...' : 'PREPARE_UPLOAD'}
+                            {isSubmitting ? 'PROCESSING...' : 'COMMIT_ORDER'}
                         </button>
                     </div>
                 )}
 
-                {currentStep === 'upload' && (
-                    <div className="flex flex-col gap-6">
-                        <h2 className="font-serif" style={{ fontSize: '2.5rem' }}>Upload Artifacts</h2>
-                        <p className="font-primary" style={{ opacity: 0.6, fontSize: '0.9rem' }}>
-                            Order created: <strong>{orderInfo?.code}</strong>. Please upload your photos for the photostrip/keychain.
-                        </p>
-
-                        <input
-                            type="file"
-                            id="file-upload"
-                            multiple
-                            onChange={e => setSelectedFiles(Array.from(e.target.files || []))}
-                            style={{ display: 'none' }}
-                        />
-
-                        <label htmlFor="file-upload" className="upload-zone">
-                            <span style={{ fontSize: '2rem', display: 'block', marginBottom: '1rem' }}>☁️</span>
-                            <span className="font-pixel">CLICK_TO_SELECT_FILES</span>
-                            <span className="font-primary" style={{ display: 'block', fontSize: '10px', opacity: 0.5, marginTop: '0.5rem' }}>
-                                PNG, JPG or JPEG (Max 10MB total)
-                            </span>
-                        </label>
-
-                        {selectedFiles.length > 0 && (
-                            <div className="file-preview-grid">
-                                {selectedFiles.map((file, i) => (
-                                    <div key={i} className="file-preview-item">
-                                        <img src={URL.createObjectURL(file)} alt="preview" />
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-
-                        <button
-                            onClick={handleFileUpload}
-                            disabled={isSubmitting}
-                            className="btn-liquid"
-                            style={{ marginTop: '2rem' }}
-                        >
-                            {isSubmitting ? 'UPLOADING...' : `UPLOAD_${selectedFiles.length}_FILES`}
-                        </button>
-                        <button onClick={() => setCurrentStep('success')} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '11px' }}>
-                            SKIP_UPLOAD
-                        </button>
+                {currentStep === 'sync' && (
+                    <div className="flex flex-col items-center justify-center gap-6" style={{ padding: '4rem 0' }}>
+                        <div className="loader-container">
+                            <div className="font-pixel" style={{ fontSize: '2rem', color: 'var(--accent-blue)' }}>{syncProgress}%</div>
+                        </div>
+                        <h2 className="font-serif" style={{ fontSize: '2.5rem' }}>Syncing Artifacts</h2>
+                        <p className="font-pixel" style={{ opacity: 0.5, fontSize: '11px', letterSpacing: '0.2em' }}>DON'T_CLOSE_THIS_WINDOW</p>
                     </div>
                 )}
 
                 {currentStep === 'success' && (
-                    <div className="flex flex-col gap-6 text-center">
-                        <div className="success-badge">✓</div>
-                        <h2 className="font-serif" style={{ fontSize: '3rem' }}>Artifact Secured</h2>
-                        <p className="font-primary" style={{ opacity: 0.7 }}>
-                            Order <strong>{orderInfo?.code}</strong> has been received. <br />
-                            Finalize payment via WhatsApp to start processing your artifacts.
-                        </p>
+                    <div className="flex flex-col gap-8 text-center">
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <div className="success-badge" style={{ width: '80px', height: '80px', fontSize: '2rem' }}>✓</div>
+                        </div>
 
-                        <a
-                            href={generateWhatsAppLink()}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn-liquid"
-                            style={{ marginTop: '2rem', display: 'block', textDecoration: 'none', background: '#25D366', color: 'white', borderColor: '#25D366' }}
-                        >
-                            PAY_VIA_WHATSAPP
-                        </a>
+                        <div>
+                            <h2 className="font-serif" style={{ fontSize: '3.5rem' }}>Transaction Secured</h2>
+                            <p className="font-primary" style={{ opacity: 0.6, marginTop: '0.5rem' }}>
+                                Order Code: <strong style={{ color: 'var(--accent-blue)' }}>{orderInfo?.code}</strong>
+                            </p>
+                        </div>
 
-                        <button onClick={() => window.location.href = '/'} className="cart-continue-btn" style={{ margin: '2rem auto 0' }}>
+                        {/* Invoice Preview (Hidden but capturable) */}
+                        <div style={{ position: 'absolute', left: '-9999px' }}>
+                            <div id="invoice-capture" style={{
+                                width: '350px',
+                                padding: '30px',
+                                background: '#111',
+                                color: '#fff',
+                                fontFamily: 'var(--font-primary)',
+                                border: '1px solid #333'
+                            }}>
+                                <div style={{ borderBottom: '2px solid #333', paddingBottom: '20px', marginBottom: '20px' }}>
+                                    <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem', margin: 0 }}>FLAMOURE</h3>
+                                    <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px', opacity: 0.5 }}>OFFICIAL_INVOICE</span>
+                                </div>
+
+                                <div style={{ marginBottom: '20px', fontSize: '12px' }}>
+                                    <div className="flex justify-between">
+                                        <span style={{ opacity: 0.5 }}>ORDER_ID</span>
+                                        <strong>{orderInfo?.code}</strong>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span style={{ opacity: 0.5 }}>DATE</span>
+                                        <strong>{new Date().toLocaleDateString()}</strong>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span style={{ opacity: 0.5 }}>CUSTOMER</span>
+                                        <strong>{customerData.customer_name}</strong>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginBottom: '20px' }}>
+                                    {cart.map((item, i) => (
+                                        <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px' }}>
+                                            <span>{item.quantity || 1}x {item.name}</span>
+                                            <span>Rp {(item.price * (item.quantity || 1)).toLocaleString()}</span>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div style={{ borderTop: '2px dashed #333', paddingTop: '15px' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px' }}>TOTAL_AMOUNT</span>
+                                        <span style={{ fontSize: '1.5rem', fontWeight: 900, color: '#00d4ff' }}>Rp {totalPrice.toLocaleString()}</span>
+                                    </div>
+                                </div>
+
+                                <div style={{ marginTop: '30px', textAlign: 'center' }}>
+                                    <p style={{ fontFamily: 'var(--font-pixel)', fontSize: '8px', opacity: 0.3 }}>THANK_YOU_FOR_CRAFTING_WITH_US</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <button onClick={downloadInvoice} className="btn-liquid" style={{ width: '100%', background: 'transparent' }}>
+                                DOWNLOAD_INVOICE_PNG
+                            </button>
+                            <a
+                                href={generateWhatsAppLink()}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="btn-liquid"
+                                style={{ width: '100%', textDecoration: 'none', background: '#25D366', color: 'white', borderColor: '#25D366' }}
+                            >
+                                CONFIRM_VIA_WHATSAPP
+                            </a>
+                        </div>
+
+                        <button onClick={() => window.location.href = '/'} className="cart-continue-btn" style={{ margin: '1rem auto 0' }}>
                             ← Return to Archives
                         </button>
                     </div>
