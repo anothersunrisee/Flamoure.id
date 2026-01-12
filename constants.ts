@@ -54,11 +54,11 @@ export const KEYCHAIN_PRODUCTS: Product[] = [
   { id: 'kc-04', name: 'FLAMOURE KEYCHAIN_04', price: 14900, image: '/product/keychain/keychain (4).png', type: 'merch' },
 ];
 
-export const STICKER_PRODUCTS: Product[] = Array.from({ length: 13 }).map((_, i) => ({
-  id: `st-${i + 1}`,
-  name: `STICKER_PACK_0${i + 1}`,
+export const STICKER_PRODUCTS: Product[] = [1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].map(num => ({
+  id: `st-${num}`,
+  name: `STICKER_PACK_0${num}`,
   price: 7900,
-  image: `/product/sticker/sticker (${i + 1}).png`,
+  image: `/product/sticker/sticker (${num}).png`,
   type: 'merch'
 }));
 

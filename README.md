@@ -2,6 +2,21 @@
 
 Flamoure is a high-end visual platform designed for the Weight of Digital Nostalgia.
 
+## 💎 UI/UX Overhaul & Features (v2.5)
+
+### 1. Admin Panel Redesign (Terminal Aesthetic)
+- **Unified Design System**: Migrated all admin styles to `admin.css`, utilizing global CSS variables for consistent theming.
+- **Dark/Light Mode Support**: Full support for dynamic theme switching adhering to system preferences or manual toggle.
+- **Glassmorphism UI**: Implemented `btn-glass`, `btn-liquid`, and frosted glass card effects for a premium feel.
+- **Improved Modal & Interaction**:
+  - Horizontal **Artifact Slider** for better image browsing.
+  - **Status Pills** with color-coded active states (Pending, Paid, Shipped, Done).
+  - Organized Sidebar Action Groups with proper spacing.
+
+### 2. Homepage & Shop Experience
+- **Smart Formatting**: "Add More Fragments" now intelligently scrolls users back to the `Artifact Library` section instead of the top of the page.
+- **Dynamic Recommendations**: Added a "Recommended Artifacts" section in the Cart/Bag view to encourage cross-selling of Stickers and Keychains.
+
 ## 🛠 Tech Stack Update (Supabase Migration)
 
 Sistem telah dimigrasikan sepenuhnya ke **Supabase** untuk Database dan Storage demi stabilitas total.

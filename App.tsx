@@ -28,6 +28,7 @@ const App: React.FC = () => {
     }
     return false;
   });
+  const [shouldScrollToCollection, setShouldScrollToCollection] = useState(false);
 
   // Preload Critical Assets
   useEffect(() => {
@@ -96,6 +97,10 @@ const App: React.FC = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Reset scroll target if leaving home, so next visit to home doesn't auto-scroll unless requested
+    if (currentView !== 'home') {
+      setShouldScrollToCollection(false);
+    }
   }, [currentView]);
 
   const handleLandingProductClick = (product: Product) => {
@@ -271,13 +276,13 @@ const App: React.FC = () => {
       </nav>
 
       <main className="main-content">
-        {currentView === 'home' && <LandingView onProductClick={handleLandingProductClick} />}
+        {currentView === 'home' && <LandingView onProductClick={handleLandingProductClick} scrollToCollection={shouldScrollToCollection} />}
 
         {currentView === 'series' && (
-          <div className="container" style={{ padding: '8rem 0' }}>
+          <div className="container" style={{ paddingTop: '8rem', paddingBottom: '8rem' }}>
             <div style={{ marginBottom: '6rem' }}>
               <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '11px', fontWeight: 700 }}>SELECT_YOUR_SERIES</span>
-              <h2 className="font-serif" style={{ fontSize: '4.5rem', marginTop: '1rem' }}>Photostrip Series</h2>
+              <h2 className="font-serif" style={{ fontSize: 'clamp(2.5rem, 10vw, 4.5rem)', marginTop: '1rem', lineHeight: 1 }}>Photostrip Series</h2>
             </div>
             <div className="collection-grid">
               {PHOTOSTRIP_SERIES.map((p, idx) => (
@@ -306,11 +311,11 @@ const App: React.FC = () => {
         )}
 
         {currentView === 'shop' && (
-          <div className="container" style={{ padding: '6rem 0' }}>
+          <div className="container" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
             <div style={{ marginBottom: '4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '2rem' }}>
               <div>
                 <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '11px', fontWeight: 700 }}>EXPLORE_COLLECTION</span>
-                <h2 className="font-serif" style={{ fontSize: 'clamp(2.5rem, 6vw, 4rem)', marginTop: '0.5rem' }}>
+                <h2 className="font-serif" style={{ fontSize: 'clamp(2.2rem, 8vw, 4.5rem)', marginTop: '0.5rem', lineHeight: 1.1 }}>
                   {shopCategory === 'keychain' ? 'Flamoure Keychains' : 'Underground Stickers'}
                 </h2>
               </div>
@@ -356,12 +361,12 @@ const App: React.FC = () => {
         )}
 
         {currentView === 'cart' && (
-          <div className="container" style={{ padding: '6rem 0', textAlign: 'center' }}>
+          <div className="container" style={{ paddingTop: '6rem', paddingBottom: '6rem', textAlign: 'center' }}>
             <h2 className="font-serif" style={{ fontSize: 'clamp(3rem, 8vw, 4.5rem)', marginBottom: '3rem' }}>Your Bag</h2>
             {cart.length === 0 ? (
               <div style={{ padding: '4rem 0' }}>
                 <p className="font-pixel" style={{ opacity: 0.5, fontSize: '1.2rem' }}>Your bag is empty_</p>
-                <button onClick={() => setCurrentView('home')} className="cart-continue-btn" style={{ margin: '3rem auto 0' }}>
+                <button onClick={() => { setShouldScrollToCollection(true); setCurrentView('home'); }} className="cart-continue-btn" style={{ margin: '3rem auto 0' }}>
                   ← EXPLORE_ARCHIVES
                 </button>
               </div>
@@ -438,18 +443,37 @@ const App: React.FC = () => {
                   </div>
                 ))}
 
+                {/* --- Recommendations Section --- */}
+                <div style={{ marginTop: '4rem', paddingTop: '4rem', borderTop: '1px solid var(--border-color)' }}>
+                  <h4 className="font-pixel" style={{ fontSize: '12px', color: 'var(--accent-blue)', marginBottom: '1.5rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Recommended_Artifacts</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
+                    {[...KEYCHAIN_PRODUCTS.slice(0, 2), ...STICKER_PRODUCTS.slice(0, 2)].map(p => (
+                      <div key={'rec-' + p.id} className="product-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)' }}>
+                        <div style={{ aspectRatio: '1/1', borderRadius: '0.75rem', overflow: 'hidden', marginBottom: '1rem' }}>
+                          <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        </div>
+                        <h5 className="font-primary" style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{p.name}</h5>
+                        <p className="font-primary" style={{ opacity: 0.6, fontSize: '0.8rem', marginBottom: '1rem' }}>Rp {p.price.toLocaleString()}</p>
+                        <button onClick={() => addToCart(p)} className="btn-liquid" style={{ width: '100%', padding: '0.5rem', fontSize: '9px' }}>
+                          ADD_1_TO_BAG
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <div style={{ marginTop: '3rem', display: 'flex', justifyContent: 'flex-end' }}>
                   <div style={{
-                    width: 'fit-content',
-                    minWidth: '400px',
+                    width: '100%',
+                    maxWidth: '500px',
                     background: 'var(--bg-secondary)',
-                    padding: '1.5rem 2.5rem',
+                    padding: '1.5rem 2rem',
                     borderRadius: '1.5rem',
                     border: '1px solid var(--border-color)',
                     display: 'flex',
+                    flexWrap: 'wrap',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    gap: '4rem'
+                    gap: '2rem'
                   }}>
                     <div style={{ whiteSpace: 'nowrap' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
@@ -458,7 +482,7 @@ const App: React.FC = () => {
                       <span className="font-primary" style={{ fontSize: '2rem', fontWeight: 900, display: 'block' }}>Rp {calculateTotal().toLocaleString()}</span>
 
                       {cart.some(i => (i.type === 'photostrip' && (i.quantity || 1) >= 4) || (cart.filter(item => item.type === 'photostrip').reduce((acc, curr) => acc + (curr.quantity || 1), 0) >= 4)) && (
-                        <div style={{ color: '#ccff00', fontSize: '9px', marginTop: '0.5rem' }} className="font-pixel">
+                        <div style={{ color: '#ccff00', fontSize: '10px', marginTop: '0.5rem', fontWeight: 700 }} className="font-pixel">
                           [ BULK_DISCOUNT_APPLIED ]
                         </div>
                       )}
@@ -485,7 +509,7 @@ const App: React.FC = () => {
                 </div>
 
                 <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'center' }}>
-                  <button onClick={() => setCurrentView('home')} className="cart-continue-btn" style={{ margin: 0 }}>
+                  <button onClick={() => { setShouldScrollToCollection(true); setCurrentView('home'); }} className="cart-continue-btn" style={{ margin: 0 }}>
                     ← ADD_MORE_FRAGMENTS
                   </button>
                 </div>

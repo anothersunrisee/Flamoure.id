@@ -5,6 +5,7 @@ import { Product } from '../types';
 
 interface LandingViewProps {
   onProductClick: (product: Product) => void;
+  scrollToCollection?: boolean;
 }
 
 interface Sticker {
@@ -33,7 +34,7 @@ const STICKER_POSITIONS = [
   { file: 'hero (13).png', x: 92, y: 76, rot: 25, scale: 0.6 }
 ];
 
-export const LandingView: React.FC<LandingViewProps> = ({ onProductClick }) => {
+export const LandingView: React.FC<LandingViewProps> = ({ onProductClick, scrollToCollection }) => {
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -152,6 +153,12 @@ export const LandingView: React.FC<LandingViewProps> = ({ onProductClick }) => {
     requestAnimationFrame(animation);
   };
 
+  useEffect(() => {
+    if (scrollToCollection) {
+      setTimeout(handleExploreClick, 100); // Small delay to ensure render
+    }
+  }, [scrollToCollection]);
+
   return (
     <div className="landing-container">
       <section ref={containerRef} className="hero-section">
@@ -194,13 +201,13 @@ export const LandingView: React.FC<LandingViewProps> = ({ onProductClick }) => {
         </div>
       </section>
 
-      <section id="collection" style={{ background: 'var(--bg-secondary)', padding: '12rem 0' }}>
+      <section id="collection" style={{ background: 'var(--bg-secondary)', paddingTop: '10rem', paddingBottom: '10rem' }}>
         <div className="container">
-          <header style={{ marginBottom: '8rem' }}>
+          <header style={{ marginBottom: '6rem' }}>
             <span className="font-pixel" style={{ fontSize: '11px', color: 'var(--accent-blue)', fontWeight: 700, letterSpacing: '0.2em' }}>
               Artifact Library v1.5
             </span>
-            <h3 className="font-serif" style={{ fontSize: 'clamp(3.5rem, 10vw, 6rem)', lineHeight: 0.95, marginTop: '2rem' }}>
+            <h3 className="font-serif" style={{ fontSize: 'clamp(2.8rem, 10vw, 6rem)', lineHeight: 0.95, marginTop: '2.2rem' }}>
               Curated Fragments <br /> For Your <span style={{ opacity: 0.35, fontStyle: 'italic' }}>Moodboard.</span>
             </h3>
           </header>

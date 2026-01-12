@@ -1,5 +1,5 @@
 {
-  "name": "flamoure---skena-photostrip-&-merch",
+  "name": "flamoure-skena-photostrip-merch",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -9,15 +9,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.90.1",
+    "@supabase/supabase-js": "^2.47.10",
     "@types/formidable": "^3.4.6",
     "@vercel/node": "^5.5.16",
     "formidable": "^3.5.4",
     "googleapis": "^170.0.0",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
+    "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
+    "recharts": "^3.6.0",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

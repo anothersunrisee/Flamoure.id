@@ -119,7 +119,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
     };
 
     return (
-        <div className="container" style={{ padding: '6rem 0' }}>
+        <div className="container" style={{ paddingTop: '6rem', paddingBottom: '6rem' }}>
             <div className="checkout-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
                 {currentStep === 'review' && (
                     <div className="flex flex-col gap-6">
