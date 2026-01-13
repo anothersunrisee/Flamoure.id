@@ -162,6 +162,23 @@ export const AdminView: React.FC = () => {
         a.click();
     };
 
+    const deleteOrder = async (id: string) => {
+        if (!window.confirm('WARNING: This will permanently delete this order and all associated data from Supabase. Are you sure?')) return;
+
+        try {
+            const { error } = await supabase.from('orders').delete().eq('id', id);
+            if (error) throw error;
+
+            setOrders(prev => prev.filter(o => o.id !== id));
+            if (selectedOrder?.id === id) setSelectedOrder(null);
+
+            // Optional: Re-fetch to ensure sync
+            // handleLogin(); 
+        } catch (err: any) {
+            alert('Failed to delete order: ' + err.message);
+        }
+    };
+
     const exportData = (format: 'CSV' | 'JSON') => {
         let content = '';
         let ext = format.toLowerCase();
@@ -334,7 +351,7 @@ export const AdminView: React.FC = () => {
                                     <Icon name="search" size={18} />
                                 </div>
                             </div>
-                            <button className="btn-primary-action" style={{ padding: '0 2rem', height: '100%', flex: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button onClick={() => window.open('/', '_blank')} className="btn-primary-action" style={{ padding: '0 2rem', height: '100%', flex: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Icon name="plus" size={14} /> <span className="hide-mobile">CREATE_ORDER</span>
                             </button>
                         </div>
@@ -401,6 +418,9 @@ export const AdminView: React.FC = () => {
 
                                     {/* Action Row */}
                                     <div className="action-row">
+                                        <button onClick={(e) => { e.stopPropagation(); deleteOrder(order.id); }} className="btn-glass" style={{ width: '40px', height: '40px', padding: 0, color: '#ff4d4d', borderColor: 'rgba(255, 77, 77, 0.3)' }} title="Delete Order">
+                                            <Icon name="close" size={16} />
+                                        </button>
                                         <button onClick={(e) => { e.stopPropagation(); downloadZip(order); }} disabled={isDownloading === order.id} className="btn-glass" style={{ width: '40px', height: '40px', padding: 0 }}>
                                             <Icon name={isDownloading === order.id ? 'loading' : 'download'} size={18} />
                                         </button>
@@ -544,6 +564,10 @@ export const AdminView: React.FC = () => {
                                     </button>
                                     <button onClick={() => alert('Invoice logic pending')} className="btn-invoice-regen">
                                         RE-GENERATE_INVOICE_PDF
+                                    </button>
+
+                                    <button onClick={() => deleteOrder(selectedOrder.id)} className="btn-invoice-regen" style={{ marginTop: '0', borderColor: 'rgba(255, 77, 77, 0.3)', color: '#ff4d4d' }}>
+                                        DELETE_ORDER_PERMANENTLY
                                     </button>
                                 </div>
                             </div>

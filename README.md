@@ -12,6 +12,9 @@ Flamoure is a high-end visual platform designed for the Weight of Digital Nostal
   - Horizontal **Artifact Slider** for better image browsing.
   - **Status Pills** with color-coded active states (Pending, Paid, Shipped, Done).
   - Organized Sidebar Action Groups with proper spacing.
+- **Enhanced Order Ops**:
+  - **Smart Order Codes**: Format `FLAM-[Initial][Date][Seq]` (e.g., `FLAM-F01130005`) for easier tracking.
+  - **CRUD Actions**: Added capability to **Delete Orders** and quick-link to **Create Order** (Open Shop).
 
 ### 2. Homepage & Shop Experience
 - **Smart Formatting**: "Add More Fragments" now intelligently scrolls users back to the `Artifact Library` section instead of the top of the page.

@@ -16,7 +16,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             items
         } = req.body;
 
-        const order_code = `FLAM-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        // Generate Custom Order Code
+        const date = new Date();
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const dd = String(date.getDate()).padStart(2, '0');
+        const firstLetter = customer_name ? customer_name.replace(/[^a-zA-Z]/g, '').charAt(0).toUpperCase() || 'X' : 'X';
+
+        // Get total count for increment
+        const { count, error: countError } = await supabase
+            .from('orders')
+            .select('*', { count: 'exact', head: true });
+
+        if (countError) {
+            console.warn('Failed to fetch order count, defaulting to random fallback');
+            // Fallback to random if count fails, to prevent order blocking
+        }
+
+        const increment = (count || 0) + 1;
+        // Format: FLAM-[FirstLetter][MMDD][Increment]
+        // Example: FLAM-F01130001
+        const order_code = `FLAM-${firstLetter}${mm}${dd}${String(increment).padStart(4, '0')}`;
 
         // 1. Create Order in Supabase
         const { data: order, error: orderError } = await supabase
