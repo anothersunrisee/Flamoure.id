@@ -6,6 +6,7 @@ import {
 } from 'recharts';
 import html2canvas from 'html2canvas';
 import '../admin.css';
+import { AdminProducts } from './AdminProducts';
 
 // Modern SVG Icons
 const Icon = ({ name, size = 18 }: { name: string, size?: number }) => {
@@ -19,7 +20,10 @@ const Icon = ({ name, size = 18 }: { name: string, size?: number }) => {
         search: <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />,
         wa: <path d="M12.03 2.14a9.86 9.86 0 0 0-8.68 14.73L2 22l5.31-1.39A9.85 9.85 0 0 0 12.03 22a9.89 9.89 0 0 0 0-19.86zm5.11 13.91c-.22.63-1.28 1.16-1.76 1.23-.48.07-.94.09-1.44-.06-.31-.09-1.21-.44-2.58-1.04-3.41-1.48-5.61-4.96-5.78-5.18s-1.38-1.84-1.38-3.51c0-1.67.87-2.5.1-3.18-.3-.07-.48.11-.64.11a1.27 1.27 0 0 0-.91.43c-.28.32-1.07 1.05-1.07 2.56s1.1 2.98 1.25 3.19c.15.21 2.17 3.32 5.27 4.66.74.32 1.31.51 1.76.65.74.24 1.41.2 1.94.12.59-.09 1.76-.72 2.01-1.41z" />,
         close: <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />,
-        external: <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />
+        external: <path d="M19 19H5V5h7V3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z" />,
+        edit: <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z" />,
+        trash: <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" />,
+        image: <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
     };
     return (
         <svg viewBox="0 0 24 24" width={size} height={size} fill="currentColor">
@@ -34,7 +38,7 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-type AdminTab = 'OVERVIEW' | 'ORDERS' | 'TOOLS';
+type AdminTab = 'OVERVIEW' | 'ORDERS' | 'TOOLS' | 'PRODUCTS';
 type TimeFilter = 'ALL' | 'TODAY' | 'WEEK' | 'MONTH' | 'YEAR';
 
 export const AdminView: React.FC = () => {
@@ -47,6 +51,9 @@ export const AdminView: React.FC = () => {
     const [isDownloading, setIsDownloading] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
+
+    // --- Product Management State ---
+    // Moved to AdminProducts.tsx
 
     const generateInvoice = async () => {
         const element = document.getElementById('admin-invoice-capture');
@@ -88,8 +95,6 @@ export const AdminView: React.FC = () => {
             setLoading(false);
         }
     };
-
-
 
     // --- Data Processing ---
     const filteredOrders = useMemo(() => {
@@ -193,9 +198,6 @@ export const AdminView: React.FC = () => {
 
             setOrders(prev => prev.filter(o => o.id !== id));
             if (selectedOrder?.id === id) setSelectedOrder(null);
-
-            // Optional: Re-fetch to ensure sync
-            // handleLogin(); 
         } catch (err: any) {
             alert('Failed to delete order: ' + err.message);
         }
@@ -269,7 +271,7 @@ export const AdminView: React.FC = () => {
             <div className="admin-container">
                 <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3.5rem', flexWrap: 'wrap', gap: '2rem' }}>
                     <div className="flex gap-4 p-2 rounded-2xl" style={{ border: '1px solid var(--border-color)', background: 'var(--bg-secondary)' }}>
-                        {(['OVERVIEW', 'ORDERS', 'TOOLS'] as AdminTab[]).map(t => (
+                        {(['OVERVIEW', 'ORDERS', 'PRODUCTS', 'TOOLS'] as AdminTab[]).map(t => (
                             <button
                                 key={t}
                                 onClick={() => setActiveTab(t)}
@@ -285,8 +287,8 @@ export const AdminView: React.FC = () => {
 
                 {/* --- Overview Tab --- */}
                 {activeTab === 'OVERVIEW' && (
-                    <div className="animate-fade-in" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', gridAutoRows: 'minmax(200px, auto)' }}>
-                        <div className="admin-card" style={{ gridColumn: 'span 1', padding: '2rem' }}>
+                    <div className="animate-fade-in overview-grid">
+                        <div className="admin-card col-span-1" style={{ padding: '2rem' }}>
                             <div>
                                 <span className="font-pixel text-accent" style={{ fontSize: '10px' }}>ESTIMATED_REVENUE_NET</span>
                                 <h3 className="font-primary" style={{ fontSize: '3rem', fontWeight: 900, marginTop: '1rem', color: 'var(--text-primary)' }}>Rp {(stats.totalRevenue / 1000).toFixed(0)}k</h3>
@@ -294,7 +296,7 @@ export const AdminView: React.FC = () => {
                             <div className="font-pixel" style={{ fontSize: '10px', opacity: 0.4, marginTop: 'auto', color: 'var(--text-secondary)' }}>Sync with {timeFilter} range</div>
                         </div>
 
-                        <div className="admin-card" style={{ gridColumn: 'span 1', padding: '2rem' }}>
+                        <div className="admin-card col-span-1" style={{ padding: '2rem' }}>
                             <div>
                                 <span className="font-pixel text-accent" style={{ fontSize: '10px' }}>COMMITTED_ORDERS</span>
                                 <h3 className="font-primary" style={{ fontSize: '4rem', fontWeight: 900, marginTop: '0.5rem', color: 'var(--text-primary)' }}>{stats.totalOrders}</h3>
@@ -306,7 +308,7 @@ export const AdminView: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="admin-card" style={{ gridColumn: 'span 2', gridRow: 'span 2', padding: '2rem' }}>
+                        <div className="admin-card col-span-2 row-span-2" style={{ padding: '2rem' }}>
                             <h4 className="font-serif mb-8" style={{ fontSize: '1.5rem', color: 'var(--text-primary)' }}>Income Growth Spectrum</h4>
                             <div style={{ width: '100%', height: '360px' }}>
                                 <ResponsiveContainer width="100%" height="100%">
@@ -327,7 +329,7 @@ export const AdminView: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="admin-card" style={{ gridColumn: 'span 2', padding: '2rem' }}>
+                        <div className="admin-card col-span-2" style={{ padding: '2rem' }}>
                             <h4 className="font-serif mb-6" style={{ fontSize: '1.4rem', color: 'var(--text-primary)' }}>Popular Artifacts</h4>
                             <div className="flex flex-col gap-3">
                                 {stats.productData.map((p, i) => (
@@ -347,7 +349,7 @@ export const AdminView: React.FC = () => {
                 {/* --- Orders Tab --- */}
                 {activeTab === 'ORDERS' && (
                     <div className="animate-fade-in">
-                        <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: '1.5rem', marginBottom: '3rem', alignItems: 'center' }}>
+                        <div className="orders-filter-bar">
                             <div className="flex p-1.5 rounded-2xl" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-color)' }}>
                                 {(['ALL', 'TODAY', 'WEEK', 'MONTH'] as TimeFilter[]).map(f => (
                                     <button
@@ -484,9 +486,12 @@ export const AdminView: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {/* --- Products Tab --- */}
+                {activeTab === 'PRODUCTS' && <AdminProducts />}
+
             </div>
 
-            {/* --- Manage Order Modal (Rendered Outside Container) --- */}
             {/* --- Manage Order Modal --- */}
             {selectedOrder && (
                 <div className="modal-fixed-overlay" onClick={() => setSelectedOrder(null)}>
@@ -679,4 +684,3 @@ export const AdminView: React.FC = () => {
         </>
     );
 };
-

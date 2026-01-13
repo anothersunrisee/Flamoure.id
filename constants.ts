@@ -48,19 +48,15 @@ export const PHOTOSTRIP_SERIES: Product[] = [
 ];
 
 export const KEYCHAIN_PRODUCTS: Product[] = [
-  { id: 'kc-01', name: 'FLAMOURE KEYCHAIN_01', price: 14900, image: '/product/keychain/keychain (1).png', type: 'merch' },
-  { id: 'kc-02', name: 'FLAMOURE KEYCHAIN_02', price: 14900, image: '/product/keychain/keychain (2).png', type: 'merch' },
-  { id: 'kc-03', name: 'FLAMOURE KEYCHAIN_03', price: 14900, image: '/product/keychain/keychain (3).png', type: 'merch' },
-  { id: 'kc-04', name: 'FLAMOURE KEYCHAIN_04', price: 14900, image: '/product/keychain/keychain (4).png', type: 'merch' },
+  { id: 'kc-schrodinger', name: 'Schrödinger‘s Cat', price: 14900, image: '/product/keychain/keychain - Schrödinger‘s cat.webp', type: 'merch' },
+  { id: 'kc-disk', name: 'Disk', price: 14900, image: '/product/keychain/keychain - disk.webp', type: 'merch' },
+  { id: 'kc-eightball', name: 'Eightball', price: 14900, image: '/product/keychain/keychain - eightball.webp', type: 'merch' },
+  { id: 'kc-lighter', name: 'Lighter', price: 14900, image: '/product/keychain/keychain - lighter.webp', type: 'merch' },
 ];
 
-export const STICKER_PRODUCTS: Product[] = [1, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].map(num => ({
-  id: `st-${num}`,
-  name: `STICKER_PACK_0${num}`,
-  price: 7900,
-  image: `/product/sticker/sticker (${num}).png`,
-  type: 'merch'
-}));
+export const STICKER_PRODUCTS: Product[] = [
+  { id: 'st-flamoure-set', name: 'Flamoure Set', price: 7900, image: '/product/sticker/stickers - flamoure set.webp', type: 'merch' },
+];
 
 export const TEMPLATES: PhotostripTemplate[] = [
   ...Array.from({ length: 9 }).map((_, i) => ({

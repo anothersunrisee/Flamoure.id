@@ -4,7 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { LandingView } from './views/LandingView';
 import { PhotostripView } from './views/PhotostripView';
 import { CheckoutView } from './components/CheckoutView';
-import { AdminView } from './views/AdminView';
+const AdminView = React.lazy(() => import('./views/AdminView').then(module => ({ default: module.AdminView })));
+
+
 import { CheckoutModal } from './components/CheckoutModal';
 import { Product, PhotostripTemplate } from './types';
 import html2canvas from 'html2canvas'; // Import html2canvas
@@ -379,7 +381,7 @@ const App: React.FC = () => {
             <div className="collection-grid">
               {(shopCategory === 'keychain' ? KEYCHAIN_PRODUCTS : STICKER_PRODUCTS).map((p) => (
                 <div key={p.id} className="product-card">
-                  <div style={{ aspectRatio: '1/1', borderRadius: '1.25rem', overflow: 'hidden', background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
+                  <div style={{ aspectRatio: '4/5', borderRadius: '1.25rem', overflow: 'hidden', background: 'var(--bg-primary)', border: '1px solid var(--border-color)' }}>
                     <img src={p.image} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   </div>
                   <div style={{ marginTop: '1.5rem' }}>
@@ -608,7 +610,7 @@ const App: React.FC = () => {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
                     {[...KEYCHAIN_PRODUCTS.slice(0, 2), ...STICKER_PRODUCTS.slice(0, 2)].map(p => (
                       <div key={'rec-' + p.id} className="product-card" style={{ padding: '1rem', background: 'rgba(255,255,255,0.02)' }}>
-                        <div style={{ aspectRatio: '1/1', background: 'var(--bg-primary)', borderRadius: '0.75rem', marginBottom: '1rem', overflow: 'hidden' }}>
+                        <div style={{ aspectRatio: '4/5', background: 'var(--bg-primary)', borderRadius: '0.75rem', marginBottom: '1rem', overflow: 'hidden' }}>
                           <img src={p.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         </div>
                         <h5 className="font-primary" style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem' }}>{p.name}</h5>
@@ -692,7 +694,18 @@ const App: React.FC = () => {
           />
         )}
 
-        {currentView === 'admin' && <AdminView />}
+        {currentView === 'admin' && (
+          <React.Suspense fallback={
+            <div className="flex h-screen w-full items-center justify-center bg-black text-white font-pixel" style={{ height: '100vh', width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div className="text-center opacity-50">
+                <div style={{ marginBottom: '1rem' }}>SYSTEM_MOUNTING</div>
+                <div style={{ fontSize: '9px' }}>LOADING_ADMIN_MODULE...</div>
+              </div>
+            </div>
+          }>
+            <AdminView />
+          </React.Suspense>
+        )}
 
         {currentView !== 'admin' && (
           <footer className="container" style={{ padding: '12rem 2rem 6rem', marginTop: 'auto', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>

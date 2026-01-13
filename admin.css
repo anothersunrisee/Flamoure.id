@@ -654,3 +654,244 @@
         opacity: 1;
     }
 }
+
+/* --- RESPONSIVE GRIDS & UTILS --- */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    grid-auto-rows: minmax(200px, auto);
+}
+
+.orders-filter-bar {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+    align-items: center;
+}
+
+.col-span-1 {
+    grid-column: span 1;
+}
+
+.col-span-2 {
+    grid-column: span 2;
+}
+
+.row-span-2 {
+    grid-row: span 2;
+}
+
+.hide-mobile {
+    display: inline-block;
+}
+
+/* Mobile Responsive Adjustments */
+@media (max-width: 1024px) {
+    .overview-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .col-span-2 {
+        grid-column: span 2;
+    }
+
+    /* Keep charts wide on tablet */
+}
+
+@media (max-width: 768px) {
+    .admin-container {
+        padding: 1rem;
+    }
+
+    .overview-grid {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .col-span-1,
+    .col-span-2,
+    .row-span-2 {
+        grid-column: auto;
+        grid-row: auto;
+    }
+
+    .orders-filter-bar {
+        grid-template-columns: 1fr;
+        /* Stack vertically */
+        gap: 1rem;
+    }
+
+    .hide-mobile {
+        display: none;
+    }
+
+    .card-header {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+    }
+
+    .status-pill-minimal {
+        align-self: flex-start;
+    }
+
+    .admin-card {
+        padding: 1.5rem;
+    }
+
+    /* Font resizing for mobile */
+    .font-primary-responsive,
+    h3.font-primary {
+        font-size: clamp(2rem, 5vw, 4rem) !important;
+    }
+}
+
+/* --- PRODUCT MANAGEMENT STYLES --- */
+.card-actions-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.admin-card:hover .card-actions-overlay {
+    opacity: 1;
+}
+
+.action-btn-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.action-btn-circle:hover {
+    transform: scale(1.15);
+}
+
+.action-btn-circle.edit {
+    background: white;
+    color: black;
+}
+
+.action-btn-circle.delete {
+    background: #ef4444;
+    color: white;
+}
+
+.action-btn-circle.delete:hover {
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+}
+
+/* Modal Inputs */
+.input-glass {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid var(--border-color);
+    padding: 0.8rem 1rem;
+    border-radius: 0.75rem;
+    width: 100%;
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    outline: none;
+    transition: all 0.2s;
+}
+
+.input-glass:focus {
+    border-color: var(--accent-blue);
+    background: rgba(37, 99, 235, 0.05);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-label {
+    display: block;
+    font-family: var(--font-pixel);
+    font-size: 9px;
+    color: var(--accent-blue);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.8;
+}
+
+.drop-zone {
+    aspect-ratio: 4/5;
+    background: rgba(255, 255, 255, 0.02);
+    border: 2px dashed var(--border-color);
+    border-radius: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.drop-zone:hover {
+    border-color: var(--accent-blue);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.drop-zone-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.drop-zone:hover .drop-zone-overlay {
+    opacity: 1;
+}
+
+/* Toggle Switch */
+.toggle-switch {
+    width: 44px;
+    height: 24px;
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    position: relative;
+    border: 1px solid var(--border-color);
+    transition: background 0.3s;
+}
+
+.toggle-switch.active {
+    background: #10b981;
+    border-color: #10b981;
+}
+
+.toggle-knob {
+    width: 18px;
+    height: 18px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: left 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-switch.active .toggle-knob {
+    left: 22px;
+}
