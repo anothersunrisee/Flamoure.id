@@ -546,14 +546,58 @@ const App: React.FC = () => {
                       )}
                     </div>
 
-                    <div className="flex flex-col items-end gap-2">
-                      <div className="flex items-center gap-3 bg-secondary rounded-full p-1 border border-color">
-                        <button onClick={() => updateQuantity(idx, -1)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white text-xs">-</button>
-                        <span className="font-pixel text-xs">{item.quantity || 1}</span>
-                        <button onClick={() => updateQuantity(idx, 1)} className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-white text-xs">+</button>
+                    <div className="flex flex-col items-end gap-3">
+                      <div className="font-primary" style={{ fontWeight: 800, fontSize: '1.2rem' }}>Rp {((item.quantity || 1) * item.price).toLocaleString()}</div>
+
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2" style={{ background: 'var(--bg-primary)', padding: '4px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                          <button
+                            onClick={() => updateQuantity(idx, -1)}
+                            style={{
+                              width: '28px', height: '28px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: 'var(--bg-secondary)', border: 'none',
+                              color: 'var(--text-primary)', borderRadius: '6px', cursor: 'pointer', fontSize: '1.2rem'
+                            }}
+                          >
+                            -
+                          </button>
+                          <span className="font-pixel" style={{ width: '20px', textAlign: 'center', fontSize: '12px' }}>{item.quantity || 1}</span>
+                          <button
+                            onClick={() => updateQuantity(idx, 1)}
+                            style={{
+                              width: '28px', height: '28px',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              background: 'var(--bg-secondary)', border: 'none',
+                              color: 'var(--text-primary)', borderRadius: '6px', cursor: 'pointer', fontSize: '1.2rem'
+                            }}
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        <button
+                          onClick={() => removeFromCart(idx)}
+                          style={{
+                            height: '38px',
+                            padding: '0 1rem',
+                            border: '1px solid #ff4d4d',
+                            background: 'rgba(255, 77, 77, 0.1)',
+                            color: '#ff4d4d',
+                            borderRadius: '8px',
+                            fontSize: '10px',
+                            fontWeight: 700,
+                            fontFamily: 'var(--font-pixel)',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            letterSpacing: '0.1em'
+                          }}
+                        >
+                          REMOVE
+                        </button>
                       </div>
-                      <div className="font-primary font-bold">Rp {((item.quantity || 1) * item.price).toLocaleString()}</div>
-                      <button onClick={() => removeFromCart(idx)} style={{ color: '#ff4d4d', fontSize: '9px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-pixel)' }}>REMOVE</button>
                     </div>
                   </div>
                 ))}
@@ -636,7 +680,12 @@ const App: React.FC = () => {
             totalPrice={calculateTotal()}
             onSuccess={(orderCode) => {
               setCart([]);
-              setCurrentView('cart'); // Go back to cart (which will show last order recovery)
+              // Update lastOrder state immediately so it appears if user navigates to cart later
+              const saved = localStorage.getItem('last_order');
+              if (saved) {
+                setLastOrder(JSON.parse(saved));
+              }
+              // Do NOT switch view here. Let CheckoutView show the success screen.
             }}
             onBack={() => setCurrentView('cart')}
             language={language}
@@ -646,20 +695,20 @@ const App: React.FC = () => {
         {currentView === 'admin' && <AdminView />}
 
         {currentView !== 'admin' && (
-          <footer className="container" style={{ padding: '12rem 0 6rem', marginTop: 'auto', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
+          <footer className="container" style={{ padding: '12rem 2rem 6rem', marginTop: 'auto', borderTop: '1px solid var(--border-color)', textAlign: 'center' }}>
             <div className="flex flex-col items-center gap-10">
               {/* Logo */}
               <img src="/logo/favicon-01.png" alt="Star" style={{ width: '60px', opacity: 0.8 }} />
 
               {/* Quote */}
-              <h3 className="font-serif" style={{ fontSize: '2.5rem', lineHeight: '1.3', maxWidth: '800px', margin: '1rem auto' }}>
+              <h3 className="font-serif" style={{ fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', lineHeight: '1.3', maxWidth: '800px', margin: '1rem auto' }}>
                 "Archiving moments, crafting artifacts—for those who feel the weight of digital nostalgia."
               </h3>
 
               {/* Bottom Info */}
               <div className="flex gap-12 mt-12" style={{ opacity: 0.4 }}>
-                <span className="font-pixel" style={{ fontSize: '12px', letterSpacing: '0.25em' }}>JKT / ID</span>
-                <span className="font-pixel" style={{ fontSize: '12px', letterSpacing: '0.25em' }}>© 2026 VISUAL SYNDICATE</span>
+                <span className="font-pixel" style={{ fontSize: '10px', letterSpacing: '0.25em' }}>JKT / ID</span>
+                <span className="font-pixel" style={{ fontSize: '10px', letterSpacing: '0.25em' }}>© 2026 VISUAL SYNDICATE</span>
               </div>
             </div>
           </footer>
