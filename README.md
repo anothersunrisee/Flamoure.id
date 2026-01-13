@@ -17,8 +17,17 @@ Flamoure is a high-end visual platform designed for the Weight of Digital Nostal
   - **CRUD Actions**: Added capability to **Delete Orders** and quick-link to **Create Order** (Open Shop).
 
 ### 2. Homepage & Shop Experience
+- **Language Switching (NEW)**: Introduced Global English (EN) and Indonesian (ID) language toggle.
+  - Translated all user-facing interfaces: Landing Page, Studio Module, and Checkout Flow.
+  - **Smart Branding**: Kept core brand terms (e.g., "STABLE_CORE", "INJECT_ARTIFACT") in English/Techno-lingo to maintain the aesthetic.
 - **Smart Formatting**: "Add More Fragments" now intelligently scrolls users back to the `Artifact Library` section instead of the top of the page.
 - **Dynamic Recommendations**: Added a "Recommended Artifacts" section in the Cart/Bag view to encourage cross-selling of Stickers and Keychains.
+- **Redesigned Footer**: Updated to a minimal, centered layout featuring the new "Visual Syndicate" branding, logo, and "JKT / ID" location stamp.
+
+## 🌐 Localization System (v3.0)
+The app now uses a centralized `translations.ts` file managed by a custom hook-like implementation.
+- `t = LANGUAGES[language]` pattern used across all components.
+- State is lifted to `App.tsx` and propagated via context-like props.
 
 ## 🛠 Tech Stack Update (Supabase Migration)
 

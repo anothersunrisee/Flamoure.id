@@ -2,6 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { TEMPLATES } from '../constants';
 import { PhotostripTemplate } from '../types';
+import { LANGUAGES } from '../translations';
 
 interface ImageConfig {
   scale: number;
@@ -14,11 +15,13 @@ interface PhotostripViewProps {
   initialTemplate?: PhotostripTemplate;
   lockStyle?: boolean;
   onCheckout: (templateName: string, images: string[], files: File[]) => void;
+  language?: 'ID' | 'EN';
 }
 
 type EditorTab = 'FRAMES' | 'ADJUST' | 'STYLE';
 
-export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate, lockStyle, onCheckout }) => {
+export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate, lockStyle, onCheckout, language = 'EN' }) => {
+  const t = LANGUAGES[language];
   const [images, setImages] = useState<string[]>([]);
   const [configs, setConfigs] = useState<ImageConfig[]>([
     { scale: 1, x: 0, y: 0, rotation: 0 },
@@ -239,20 +242,20 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
         <div className="studio-status-bar">
           <div className="flex gap-6 items-center">
             <div className="flex flex-col">
-              <span className="font-pixel" style={{ fontSize: '11px', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Archive_Unit</span>
+              <span className="font-pixel" style={{ fontSize: '11px', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.STUDIO_ARCHIVE_UNIT}</span>
               <span className="font-pixel" style={{ fontSize: '16px' }}>A-00{selectedTemplate.id.length}</span>
             </div>
             <div className="hide-mobile" style={{ width: '1px', height: '24px', background: 'var(--border-color)' }}></div>
             <div className="flex flex-col hide-mobile">
-              <span className="font-pixel" style={{ fontSize: '11px', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Status</span>
+              <span className="font-pixel" style={{ fontSize: '11px', opacity: 0.8, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{t.STUDIO_STATUS}</span>
               <span className="font-pixel" style={{ fontSize: '16px', color: isProcessing ? '#3b82f6' : '#ccff00' }}>
-                {isProcessing ? 'SCANNING...' : 'STABLE_CORE'}
+                {isProcessing ? t.STUDIO_SCANNING : t.STUDIO_STABLE}
               </span>
             </div>
           </div>
           <div className="flex gap-2 md:gap-4">
-            <button onClick={undo} disabled={history.length === 0} className="nav-btn" style={{ padding: '0.75rem 1.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', opacity: history.length ? 1 : 0.3, fontSize: '13px', fontWeight: 700 }}>⟲ UNDO</button>
-            <button onClick={redo} disabled={future.length === 0} className="nav-btn" style={{ padding: '0.75rem 1.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', opacity: future.length ? 1 : 0.3, fontSize: '13px', fontWeight: 700 }}>REDO ⟳</button>
+            <button onClick={undo} disabled={history.length === 0} className="nav-btn" style={{ padding: '0.75rem 1.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', opacity: history.length ? 1 : 0.3, fontSize: '13px', fontWeight: 700 }}>{t.STUDIO_UNDO}</button>
+            <button onClick={redo} disabled={future.length === 0} className="nav-btn" style={{ padding: '0.75rem 1.5rem', background: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '8px', color: 'var(--text-primary)', opacity: future.length ? 1 : 0.3, fontSize: '13px', fontWeight: 700 }}>{t.STUDIO_REDO}</button>
           </div>
         </div>
 
@@ -366,7 +369,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
             </div>
 
             <p className="font-pixel hide-mobile" style={{ fontSize: '12px', marginTop: '2rem', opacity: 0.6, letterSpacing: '0.05em' }}>
-              [TIP] Drag to Pan • Scroll to Zoom • Arrow Keys for Fine Tuning
+              {t.STUDIO_TIP}
             </p>
           </div>
 
@@ -381,7 +384,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                     className={`tab-btn ${activeTab === tab ? 'active' : ''}`}
                     onClick={() => setActiveTab(tab)}
                   >
-                    {tab}
+                    {t.STUDIO_TABS[tab]}
                   </button>
                 ))}
             </div>
@@ -391,8 +394,8 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                 <div className="flex flex-col gap-4">
                   <div className="flex justify-between items-end">
                     <div>
-                      <h3 className="font-primary" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Image Matrix</h3>
-                      <p className="font-pixel" style={{ fontSize: '13px', opacity: 0.8, textTransform: 'uppercase', marginTop: '6px', letterSpacing: '0.05em' }}>Sequence Management</p>
+                      <h3 className="font-primary" style={{ fontSize: '1.1rem', fontWeight: 700 }}>{t.STUDIO_IMAGE_MATRIX}</h3>
+                      <p className="font-pixel" style={{ fontSize: '13px', opacity: 0.8, textTransform: 'uppercase', marginTop: '6px', letterSpacing: '0.05em' }}>{t.STUDIO_SEQUENCE_MGMT}</p>
                     </div>
                     {images.length >= 2 && (
                       <button
@@ -400,7 +403,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                         className="font-pixel"
                         style={{ fontSize: '11px', border: 'none', background: 'transparent', cursor: 'pointer', color: swapSourceIndex !== null ? '#ff4d4d' : 'var(--accent-blue)', textDecoration: 'underline' }}
                       >
-                        {swapSourceIndex !== null ? '[ Cancel_Swap ]' : '[ Swap_Positions ]'}
+                        {swapSourceIndex !== null ? t.STUDIO_CANCEL_SWAP : t.STUDIO_SWAP_POSITIONS}
                       </button>
                     )}
                   </div>
@@ -458,7 +461,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                       }}
                     >
                       <span style={{ fontSize: '1.1rem' }}>⧉</span>
-                      <span className="font-pixel" style={{ fontSize: '14px', fontWeight: 700 }}>INJECT_ARTIFACT</span>
+                      <span className="font-pixel" style={{ fontSize: '14px', fontWeight: 700 }}>{t.STUDIO_INJECT_ARTIFACT}</span>
                     </button>
 
                     {images[activeSlot] && (
@@ -466,7 +469,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                         onClick={() => removeImage(activeSlot)}
                         style={{ width: '100%', marginTop: '1.5rem', background: 'transparent', border: 'none', color: '#ff4d4d', fontSize: '9px', fontFamily: 'var(--font-pixel)', cursor: 'pointer', opacity: 0.6 }}
                       >
-                          // PURGE_SLOT_0{activeSlot + 1}_DATA
+                        {t.STUDIO_PURGE_SLOT}0{activeSlot + 1}_DATA
                       </button>
                     )}
                   </div>
@@ -478,13 +481,13 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                   {!images[activeSlot] ? (
                     <div className="flex flex-col items-center justify-center" style={{ padding: '4rem 0', opacity: 0.15 }}>
                       <span style={{ fontSize: '3rem' }}>🔍</span>
-                      <span className="font-pixel" style={{ fontSize: '11px', marginTop: '1rem' }}>EMPTY_BUFFER</span>
+                      <span className="font-pixel" style={{ fontSize: '11px', marginTop: '1rem' }}>{t.STUDIO_EMPTY_BUFFER}</span>
                     </div>
                   ) : (
                     <>
                       <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center">
-                          <span className="font-primary" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.9 }}>Zoom Intensity</span>
+                          <span className="font-primary" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.9 }}>{t.STUDIO_ZOOM_INTENSITY}</span>
                           <span className="font-pixel" style={{ fontSize: '13px', color: 'var(--accent-blue)', fontWeight: 800 }}>x{configs[activeSlot].scale.toFixed(2)}</span>
                         </div>
                         <input
@@ -496,7 +499,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
 
                       <div className="flex flex-col gap-3">
                         <div className="flex justify-between items-center">
-                          <span className="font-primary" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.9 }}>Rotation Axis</span>
+                          <span className="font-primary" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.9 }}>{t.STUDIO_ROTATION_AXIS}</span>
                           <span className="font-pixel" style={{ fontSize: '13px', color: 'var(--accent-blue)', fontWeight: 800 }}>{Math.round(configs[activeSlot].rotation)}°</span>
                         </div>
                         <input
@@ -507,12 +510,12 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                         <div className="flex gap-2" style={{ marginTop: '0.5rem' }}>
                           <button onClick={() => updateConfig(activeSlot, 'rotation', configs[activeSlot].rotation - 90)} className="tab-btn" style={{ padding: '0.4rem', fontSize: '9px' }}>-90°</button>
                           <button onClick={() => updateConfig(activeSlot, 'rotation', configs[activeSlot].rotation + 90)} className="tab-btn" style={{ padding: '0.4rem', fontSize: '9px' }}>+90°</button>
-                          <button onClick={() => updateConfig(activeSlot, 'rotation', 0)} className="tab-btn" style={{ padding: '0.4rem', fontSize: '9px' }}>Reset</button>
+                          <button onClick={() => updateConfig(activeSlot, 'rotation', 0)} className="tab-btn" style={{ padding: '0.4rem', fontSize: '9px' }}>{t.STUDIO_RESET}</button>
                         </div>
                       </div>
 
                       <div className="flex flex-col gap-4">
-                        <span className="font-primary" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.9 }}>Position Precision</span>
+                        <span className="font-primary" style={{ fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', opacity: 0.9 }}>{t.STUDIO_POSITION_PRECISION}</span>
                         <div className="d-pad" style={{ scale: '0.8', margin: '0 auto' }}>
                           <button onClick={() => panStep('u')} className="d-btn" style={{ gridColumn: '2', gridRow: '1' }}>▲</button>
                           <button onClick={() => panStep('d')} className="d-btn" style={{ gridColumn: '2', gridRow: '3' }}>▼</button>
@@ -523,7 +526,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                             className="d-btn center"
                             style={{ gridColumn: '2', gridRow: '2', fontSize: '12px', fontWeight: 800 }}
                           >
-                            RESET
+                            {t.STUDIO_RESET_POS}
                           </button>
                         </div>
                       </div>
@@ -534,7 +537,7 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
 
               {activeTab === 'STYLE' && (
                 <div className="flex flex-col gap-4">
-                  <h3 className="font-primary" style={{ fontSize: '1.1rem', fontWeight: 700 }}>Archive Medium</h3>
+                  <h3 className="font-primary" style={{ fontSize: '1.1rem', fontWeight: 700 }}>{t.STUDIO_ARCHIVE_MEDIUM}</h3>
                   <div className="style-list">
                     {TEMPLATES.map(t => (
                       <div
@@ -588,10 +591,10 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
                 className="btn-primary"
                 style={{ width: '100%', fontSize: '0.9rem', padding: '1.25rem' }}
               >
-                {images.length < 2 ? `INJECT MIN. 2 FRAGMENTS` : 'COMMIT_ARCHIVE_ORDER'}
+                {images.length < 2 ? t.STUDIO_INJECT_MIN : t.STUDIO_COMMIT_ORDER}
               </button>
               <p className="font-pixel" style={{ textAlign: 'center', fontSize: '9px', opacity: 0.4, marginTop: '2rem', letterSpacing: '0.4em' }}>
-                LOCAL_ENCRYPTION_ACTIVE_V.2.5
+                {t.STUDIO_ENCRYPTION}
               </p>
             </div>
 
@@ -601,4 +604,3 @@ export const PhotostripView: React.FC<PhotostripViewProps> = ({ initialTemplate,
     </div>
   );
 };
-

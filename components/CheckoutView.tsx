@@ -1,17 +1,21 @@
+
 import React, { useState } from 'react';
 import { Product } from '../types';
 import html2canvas from 'html2canvas';
+import { LANGUAGES } from '../translations';
 
 interface CheckoutViewProps {
     cart: Product[];
     totalPrice: number;
     onSuccess: (orderCode: string) => void;
     onBack: () => void;
+    language?: 'ID' | 'EN';
 }
 
 type Step = 'review' | 'data' | 'sync' | 'success';
 
-export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, onSuccess, onBack }) => {
+export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, onSuccess, onBack, language = 'EN' }) => {
+    const t = LANGUAGES[language];
     const [currentStep, setCurrentStep] = useState<Step>('review');
     const [customerData, setCustomerData] = useState({
         customer_name: '',
@@ -23,6 +27,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
     const [syncProgress, setSyncProgress] = useState(0);
     const [orderInfo, setOrderInfo] = useState<{ id: string, code: string } | null>(null);
     const [finalPrice, setFinalPrice] = useState(totalPrice); // Lock the price for invoice
+    const [finalCart, setFinalCart] = useState<Product[]>([]); // Lock cart for invoice
 
     const steps: Step[] = ['review', 'data', 'sync', 'success'];
 
@@ -47,7 +52,18 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
             if (!data.success) throw new Error(data.error || 'Failed to create order');
 
             setFinalPrice(totalPrice); // Ensure we have the current total
+            setFinalCart(cart); // Lock the cart items for the invoice
             setOrderInfo({ id: data.order_id, code: data.order_code });
+
+            // CACHE: Save for "Last Order" recovery
+            localStorage.setItem('last_order', JSON.stringify({
+                orderInfo: { id: data.order_id, code: data.order_code },
+                finalCart: cart,
+                finalPrice: totalPrice,
+                customerData,
+                timestamp: Date.now()
+            }));
+
             setCurrentStep('sync');
 
             // 2. Upload Files Automatically (Parallelized for Speed)
@@ -124,8 +140,8 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                 {currentStep === 'review' && (
                     <div className="flex flex-col gap-6">
                         <div style={{ marginBottom: '1rem' }}>
-                            <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '10px' }}>STEP_01</span>
-                            <h2 className="font-serif" style={{ fontSize: '3rem' }}>Final Review</h2>
+                            <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '10px' }}>{t.CHECKOUT_STEP_01}</span>
+                            <h2 className="font-serif" style={{ fontSize: '3rem' }}>{t.CHECKOUT_FINAL_REVIEW}</h2>
                         </div>
 
                         <div className="cart-list" style={{ padding: 0 }}>
@@ -137,7 +153,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                         </div>
                                         <div>
                                             <h4 className="font-primary" style={{ fontSize: '1rem', fontWeight: 700 }}>{item.name}</h4>
-                                            <span className="font-pixel" style={{ fontSize: '9px', opacity: 0.5 }}>QTY: {item.quantity || 1}</span>
+                                            <span className="font-pixel" style={{ fontSize: '9px', opacity: 0.5 }}>{t.CHECKOUT_QTY}: {item.quantity || 1}</span>
                                         </div>
                                     </div>
                                     <span className="font-pixel">Rp {(item.price * (item.quantity || 1)).toLocaleString()}</span>
@@ -147,13 +163,13 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
 
                         <div style={{ background: 'var(--bg-secondary)', padding: '1.5rem', borderRadius: '1rem', border: '1px solid var(--border-color)' }}>
                             <div className="flex justify-between items-center">
-                                <span className="font-pixel" style={{ opacity: 0.6 }}>TOTAL_TO_PAY</span>
+                                <span className="font-pixel" style={{ opacity: 0.6 }}>{t.CHECKOUT_TOTAL_PAY}</span>
                                 <span className="font-primary" style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--accent-blue)' }}>Rp {totalPrice.toLocaleString()}</span>
                             </div>
                         </div>
 
                         <button onClick={() => setCurrentStep('data')} className="btn-liquid" style={{ marginTop: '1rem', background: 'var(--accent-blue)', color: '#fff', fontWeight: 800 }}>
-                            CONFIRM_FRAGMENTS ➔
+                            {t.CHECKOUT_CONFIRM}
                         </button>
                     </div>
                 )}
@@ -161,13 +177,13 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                 {currentStep === 'data' && (
                     <div className="flex flex-col gap-6">
                         <div style={{ marginBottom: '1rem' }}>
-                            <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '10px' }}>STEP_02</span>
-                            <h2 className="font-serif" style={{ fontSize: '3rem' }}>Identity</h2>
+                            <span className="font-pixel" style={{ color: 'var(--accent-blue)', fontSize: '10px' }}>{t.CHECKOUT_STEP_02}</span>
+                            <h2 className="font-serif" style={{ fontSize: '3rem' }}>{t.CHECKOUT_IDENTITY}</h2>
                         </div>
 
                         <div className="modal-form-body" style={{ padding: 0 }}>
                             <div className="input-field-group">
-                                <label>FULL_NAME</label>
+                                <label>{t.CHECKOUT_FULL_NAME}</label>
                                 <input
                                     type="text"
                                     value={customerData.customer_name}
@@ -176,7 +192,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                 />
                             </div>
                             <div className="input-field-group">
-                                <label>WHATSAPP_NUMBER</label>
+                                <label>{t.CHECKOUT_WHATSAPP}</label>
                                 <input
                                     type="tel"
                                     value={customerData.customer_phone}
@@ -185,7 +201,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                 />
                             </div>
                             <div className="input-field-group">
-                                <label>EMAIL</label>
+                                <label>{t.CHECKOUT_EMAIL}</label>
                                 <input
                                     type="email"
                                     value={customerData.customer_email}
@@ -206,7 +222,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                 fontWeight: 900
                             }}
                         >
-                            {isSubmitting ? 'PROCESSING...' : 'COMMIT_ORDER'}
+                            {isSubmitting ? t.CHECKOUT_PROCESSING : t.CHECKOUT_COMMIT}
                         </button>
                     </div>
                 )}
@@ -216,8 +232,8 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                         <div className="loader-container">
                             <div className="font-pixel" style={{ fontSize: '2rem', color: 'var(--accent-blue)' }}>{syncProgress}%</div>
                         </div>
-                        <h2 className="font-serif" style={{ fontSize: '2.5rem' }}>Syncing Artifacts</h2>
-                        <p className="font-pixel" style={{ opacity: 0.5, fontSize: '11px', letterSpacing: '0.2em' }}>DON'T_CLOSE_THIS_WINDOW</p>
+                        <h2 className="font-serif" style={{ fontSize: '2.5rem' }}>{t.CHECKOUT_SYNCING}</h2>
+                        <p className="font-pixel" style={{ opacity: 0.5, fontSize: '11px', letterSpacing: '0.2em' }}>{t.CHECKOUT_DONT_CLOSE}</p>
                     </div>
                 )}
 
@@ -228,9 +244,9 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                         </div>
 
                         <div>
-                            <h2 className="font-serif" style={{ fontSize: '3.5rem' }}>Transaction Secured</h2>
+                            <h2 className="font-serif" style={{ fontSize: '3.5rem' }}>{t.CHECKOUT_SECURED}</h2>
                             <p className="font-primary" style={{ opacity: 0.6, marginTop: '0.5rem' }}>
-                                Order Code: <strong style={{ color: 'var(--accent-blue)' }}>{orderInfo?.code}</strong>
+                                {t.CHECKOUT_ORDER_CODE} <strong style={{ color: 'var(--accent-blue)' }}>{orderInfo?.code}</strong>
                             </p>
                         </div>
 
@@ -279,7 +295,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
 
                                 <div style={{ marginBottom: '30px' }}>
                                     <span style={{ opacity: 0.4, display: 'block', marginBottom: '15px' }} className="font-pixel">MANIFEST_DETAILS</span>
-                                    {cart.length > 0 ? cart.map((item, i) => (
+                                    {finalCart.length > 0 ? finalCart.map((item, i) => (
                                         <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '12px' }}>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontWeight: 700 }}>{item.name}</div>
@@ -307,7 +323,7 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
 
                         <div className="flex flex-col gap-4" style={{ marginTop: '1rem' }}>
                             <button onClick={downloadInvoice} className="btn-liquid" style={{ width: '100%', background: 'rgba(255,255,255,0.02)', borderColor: 'var(--border-color)' }}>
-                                DOWNLOAD_INVOICE_PNG
+                                {t.CHECKOUT_DOWNLOAD_PNG}
                             </button>
                             <a
                                 href={generateWhatsAppLink()}
@@ -323,12 +339,12 @@ export const CheckoutView: React.FC<CheckoutViewProps> = ({ cart, totalPrice, on
                                     fontWeight: 900
                                 }}
                             >
-                                CONFIRM_VIA_WHATSAPP
+                                {t.CHECKOUT_CONFIRM_WA}
                             </a>
                         </div>
 
                         <button onClick={() => window.location.href = '/'} className="cart-continue-btn" style={{ margin: '1rem auto 0' }}>
-                            ← Return to Archives
+                            {t.CHECKOUT_RETURN}
                         </button>
                     </div>
                 )}

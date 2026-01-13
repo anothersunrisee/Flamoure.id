@@ -2,10 +2,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PRODUCTS } from '../constants';
 import { Product } from '../types';
+import { LANGUAGES } from '../translations';
 
 interface LandingViewProps {
   onProductClick: (product: Product) => void;
   scrollToCollection?: boolean;
+  language?: 'ID' | 'EN';
 }
 
 interface Sticker {
@@ -34,7 +36,8 @@ const STICKER_POSITIONS = [
   { file: 'hero (13).png', x: 92, y: 76, rot: 25, scale: 0.6 }
 ];
 
-export const LandingView: React.FC<LandingViewProps> = ({ onProductClick, scrollToCollection }) => {
+export const LandingView: React.FC<LandingViewProps> = ({ onProductClick, scrollToCollection, language = 'EN' }) => {
+  const t = LANGUAGES[language];
   const [stickers, setStickers] = useState<Sticker[]>([]);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [isMounted, setIsMounted] = useState(false);
@@ -166,7 +169,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onProductClick, scroll
           <img src="/monitor.png" alt="monitor" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
           <div className="monitor-content">
             <h2 className="monitor-title">Physical <br /> Fragments</h2>
-            <p className="monitor-subtitle">of a digital soul</p>
+            <p className="monitor-subtitle">{t.LANDING_SUBTITLE}</p>
           </div>
         </div>
 
@@ -196,7 +199,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onProductClick, scroll
             className="btn-liquid"
             onClick={handleExploreClick}
           >
-            Explore Archives ↓
+            {t.LANDING_EXPLORE_BTN}
           </button>
         </div>
       </section>
@@ -205,10 +208,10 @@ export const LandingView: React.FC<LandingViewProps> = ({ onProductClick, scroll
         <div className="container">
           <header style={{ marginBottom: '6rem' }}>
             <span className="font-pixel" style={{ fontSize: '11px', color: 'var(--accent-blue)', fontWeight: 700, letterSpacing: '0.2em' }}>
-              Artifact Library v1.5
+              {t.LANDING_LIBRARY_LABEL}
             </span>
             <h3 className="font-serif" style={{ fontSize: 'clamp(2.8rem, 10vw, 6rem)', lineHeight: 0.95, marginTop: '2.2rem' }}>
-              Curated Fragments <br /> For Your <span style={{ opacity: 0.35, fontStyle: 'italic' }}>Moodboard.</span>
+              <span dangerouslySetInnerHTML={{ __html: t.LANDING_CURATED_TITLE }} /> <span style={{ opacity: 0.35, fontStyle: 'italic' }}>{t.LANDING_MOODBOARD}</span>
             </h3>
           </header>
 
@@ -227,14 +230,14 @@ export const LandingView: React.FC<LandingViewProps> = ({ onProductClick, scroll
                   </div>
                   <div style={{ marginTop: '2rem' }}>
                     <span className="font-pixel" style={{ fontSize: '9px', fontWeight: 800, color: 'var(--accent-blue)', opacity: 0.6, textTransform: 'uppercase' }}>
-                      {p.type === 'photostrip' ? 'Studio Module' : 'Visual Good'}
+                      {p.type === 'photostrip' ? t.LANDING_CARD_MODULE : t.LANDING_CARD_GOODS}
                     </span>
                     <h4 className="font-primary" style={{ fontSize: '1.75rem', fontWeight: 700, marginTop: '0.5rem' }}>{p.name}</h4>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--border-color)' }}>
                       <span className="font-primary" style={{ fontSize: '1.25rem', fontWeight: 800 }}>Rp {p.price.toLocaleString()}</span>
                       <button className="btn-liquid" style={{ fontSize: '10px', padding: '0.6rem 1.25rem' }}>
-                        {p.id === 'ps-main' ? 'SELECT_SERIES' : 'VIEW_DETAILS'}
+                        {p.id === 'ps-main' ? t.LANDING_SELECT_SERIES : t.LANDING_VIEW_DETAILS}
                       </button>
                     </div>
                   </div>

@@ -4,6 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
+import html2canvas from 'html2canvas';
 import '../admin.css';
 
 // Modern SVG Icons
@@ -47,6 +48,25 @@ export const AdminView: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
+    const generateInvoice = async () => {
+        const element = document.getElementById('admin-invoice-capture');
+        if (!element || !selectedOrder) return;
+
+        try {
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#111',
+                scale: 2
+            });
+            const link = document.createElement('a');
+            link.download = `INVOICE_${selectedOrder.order_code}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        } catch (err) {
+            console.error('Invoice generation failed', err);
+            alert('Failed to generate invoice');
+        }
+    };
+
     const handleLogin = async () => {
         setLoading(true);
         try {
@@ -68,6 +88,8 @@ export const AdminView: React.FC = () => {
             setLoading(false);
         }
     };
+
+
 
     // --- Data Processing ---
     const filteredOrders = useMemo(() => {
@@ -556,13 +578,20 @@ export const AdminView: React.FC = () => {
                                         ))}
                                     </div>
 
-                                    <a href={`https://wa.me/${selectedOrder.customer_phone}`} target="_blank" rel="noreferrer" className="btn-sidebar-action btn-whatsapp">
+                                    <a
+                                        href={`https://wa.me/${selectedOrder.customer_phone}?text=${encodeURIComponent(
+                                            `Halo ${selectedOrder.customer_name}, terima kasih telah memesan di Flamoure.co! 🖤\n\nIni konfirmasi untuk pesananmu:\n*Kode Pesanan:* ${selectedOrder.order_code}\n*Total:* Rp ${selectedOrder.total_price.toLocaleString()}\n\nMohon konfirmasi pembayaran atau kirim bukti transfer agar pesanan bisa segera kami proses ya. Terima kasih!`
+                                        )}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="btn-sidebar-action btn-whatsapp"
+                                    >
                                         <Icon name="wa" size={18} /> INITIATE WHATSAPP
                                     </a>
                                     <button onClick={() => downloadZip(selectedOrder)} className="btn-sidebar-action btn-download-all">
                                         <Icon name="download" size={18} /> BATCH DOWNLOAD ZIP
                                     </button>
-                                    <button onClick={() => alert('Invoice logic pending')} className="btn-invoice-regen">
+                                    <button onClick={generateInvoice} className="btn-invoice-regen">
                                         RE-GENERATE_INVOICE_PDF
                                     </button>
 
@@ -571,6 +600,78 @@ export const AdminView: React.FC = () => {
                                     </button>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Hidden Invoice Template for Admin Capture */}
+            {selectedOrder && (
+                <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+                    <div id="admin-invoice-capture" style={{
+                        width: '380px',
+                        padding: '40px',
+                        background: '#0a0a0a',
+                        color: '#fff',
+                        fontFamily: 'var(--font-primary)',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        border: '1px solid #222'
+                    }}>
+                        {/* Watermark */}
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%) rotate(-15deg)', fontSize: '5rem', opacity: 0.03, fontFamily: 'var(--font-serif)', pointerEvents: 'none', whiteSpace: 'nowrap' }}>
+                            FLAMOURE
+                        </div>
+
+                        <div style={{ borderBottom: '1px solid #333', paddingBottom: '20px', marginBottom: '30px' }}>
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <h3 style={{ fontFamily: 'var(--font-serif)', fontSize: '2.5rem', margin: 0, lineHeight: 0.8 }}>FLAMOURE</h3>
+                                    <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px', opacity: 0.5, letterSpacing: '0.2em' }}>OFFICIAL_ARTIFACT_INVOICE</span>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px', display: 'block' }}>ORD_CODE</span>
+                                    <strong style={{ fontSize: '14px', color: 'var(--accent-blue)' }}>#{selectedOrder.order_code}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '30px', fontSize: '11px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                                <div>
+                                    <span style={{ opacity: 0.4, display: 'block', marginBottom: '4px' }} className="font-pixel">ISSUED_TO</span>
+                                    <strong style={{ fontSize: '12px' }}>{selectedOrder.customer_name}</strong>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <span style={{ opacity: 0.4, display: 'block', marginBottom: '4px' }} className="font-pixel">DATE_STAMP</span>
+                                    <strong style={{ fontSize: '12px' }}>{new Date(selectedOrder.created_at || Date.now()).toLocaleDateString('id-ID')}</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '30px' }}>
+                            <span style={{ opacity: 0.4, display: 'block', marginBottom: '15px' }} className="font-pixel">MANIFEST_DETAILS</span>
+                            {selectedOrder.order_items?.length > 0 ? selectedOrder.order_items.map((item: any, i: number) => (
+                                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '12px' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 700 }}>{item.product_name}</div>
+                                        <div style={{ fontSize: '9px', opacity: 0.5 }}>{item.quantity || 1} UNIT(S)</div>
+                                    </div>
+                                    <span style={{ fontWeight: 800 }}>Rp {item.price.toLocaleString()}</span>
+                                </div>
+                            )) : (
+                                <div style={{ fontSize: '12px', opacity: 0.5, fontStyle: 'italic' }}>Recovering order manifest...</div>
+                            )}
+                        </div>
+
+                        <div style={{ borderTop: '1px solid #333', paddingTop: '20px', marginTop: '20px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <span style={{ fontFamily: 'var(--font-pixel)', fontSize: '10px', opacity: 0.6 }}>SETTLEMENT_TOTAL</span>
+                                <span style={{ fontSize: '1.8rem', fontWeight: 900, color: 'var(--accent-blue)' }}>Rp {selectedOrder.total_price.toLocaleString()}</span>
+                            </div>
+                        </div>
+
+                        <div style={{ marginTop: '40px', textAlign: 'center' }}>
+                            <p style={{ fontFamily: 'var(--font-pixel)', fontSize: '8px', opacity: 0.3, letterSpacing: '0.4em' }}>VERIFIED_BY_FLAMOURE_ARCHIVES</p>
                         </div>
                     </div>
                 </div>
